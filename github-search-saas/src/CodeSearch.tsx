@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 import { githubSearchApi } from './api/apiconfigs';
 
 const CodeSearch = () => {
@@ -14,7 +13,7 @@ const CodeSearch = () => {
 
     try {
       const response = await githubSearchApi.get(
-        `https://api.github.com/search/code?q=${query}+language:javascript`, // Adjust language as needed
+        `https://api.github.com/search/code?q=${query}+language:javascript+user:Owen-Choh`, // Adjust language as needed
       );
 
       setResults(response.data.items);
