@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
-import { githubSearchApi } from './api/apiconfigs';
-import { useGithubContext } from './context/useGithubContext';
+import React, { useState } from "react";
+import { githubSearchCodeApi } from "./api/apiconfigs";
+import { useGithubContext } from "./context/useGithubContext";
 
 const CodeSearch = () => {
   const context = useGithubContext;
 
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -15,10 +15,10 @@ const CodeSearch = () => {
     setError(null);
 
     try {
-      const response = await githubSearchApi.get(
-        `https://api.github.com/search/code?q=${query}+language:ts+OR+language:tsx+user:Owen-Choh`, // Adjust language as needed
+      const response = await githubSearchCodeApi.get(
+        githubSearchCodeApi.defaults.baseURL +
+          `?q=${query}+language:ts+OR+language:tsx+user:Owen-Choh`
       );
-
       setResults(response.data.items);
     } catch (err) {
       setError(err.message);
@@ -37,10 +37,10 @@ const CodeSearch = () => {
         placeholder="Enter code snippet..."
       />
       <button onClick={handleSearch} disabled={loading}>
-        {loading ? 'Searching...' : 'Search'}
+        {loading ? "Searching..." : "Search"}
       </button>
 
-      {error && <p style={{ color: 'red' }}>Error: {error}</p>}
+      {error && <p style={{ color: "red" }}>Error: {error}</p>}
 
       <h2>Results:</h2>
       <ul>
