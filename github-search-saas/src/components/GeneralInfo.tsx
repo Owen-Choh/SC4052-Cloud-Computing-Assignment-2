@@ -75,7 +75,10 @@ const GeneralInfo: React.FC = () => {
           ) : (
             <select
               value={repository}
-              onChange={(e) => setRepository(e.target.value)}
+              onChange={(e) => {
+                const selectedRepo = e.target.value;
+                setRepository(selectedRepo); // Update context provider
+              }}
             >
               <option value="" className="text-black">Select a repository</option>
               {repos.map((repo) => (
