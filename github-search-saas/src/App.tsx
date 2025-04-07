@@ -1,11 +1,14 @@
-import React from 'react';
 import CodeSearch from './CodeSearch';
-import './App.css';
+import Settings from './Settings';
+import { GithubProvider } from './context/useGithubContext';
 
 function App() {
   return (
     <div className="App">
-      <CodeSearch />
+      <GithubProvider>
+        <Settings />
+        <CodeSearch />
+      </GithubProvider>
     </div>
   );
 }
