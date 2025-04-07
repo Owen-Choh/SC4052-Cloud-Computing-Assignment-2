@@ -9,6 +9,7 @@ const CodeSearch = () => {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [minimized, setMinimized] = useState(false);
 
   const handleSearch = async () => {
     setLoading(true);
@@ -27,9 +28,20 @@ const CodeSearch = () => {
     }
   };
 
+  const toggleMinimized = () => {
+    setMinimized((prev) => !prev);
+  };
+
   return (
-    <div>
+    <div className="p-4 w-screen border-gray-500 border-2 rounded-lg relative">
+      <button
+        onClick={() => toggleMinimized()}
+        className="absolute top-2 right-2 bg-gray-200 px-2 py-1 rounded"
+      >
+        {minimized? "Minimize" : "Expand"}
+      </button>
       <h1>GitHub Code Search</h1>
+      {minimized && <>
       <input
         type="text"
         value={query}
@@ -52,6 +64,8 @@ const CodeSearch = () => {
           </li>
         ))}
       </ul>
+      </>
+}
     </div>
   );
 };
