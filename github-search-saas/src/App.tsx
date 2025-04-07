@@ -1,12 +1,12 @@
 import CodeSearch from './CodeSearch';
-import Settings from './Settings';
+import GeneralInfo from './components/GeneralInfo';
 import { GithubProvider } from './context/useGithubContext';
 
 function App() {
   return (
     <div className="App">
       <GithubProvider>
-        <Settings />
+        <GeneralInfo />
         <CodeSearch />
       </GithubProvider>
     </div>
