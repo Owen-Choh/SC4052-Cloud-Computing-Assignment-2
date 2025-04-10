@@ -1,4 +1,4 @@
-import CodeSearch from './CodeSearch';
+import CodeSearch from './components/CodeSearch';
 import GeneralInfo from './components/GeneralInfo';
 import { GithubProvider } from './context/useGithubContext';
 

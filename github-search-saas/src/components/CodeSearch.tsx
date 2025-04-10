@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { githubSearchCodeApi } from "./api/apiconfigs";
-import { useGithubContext } from "./context/useGithubContext";
+import { githubSearchCodeApi } from "../api/apiconfigs";
+import { useGithubContext } from "../context/useGithubContext";
 
 const CodeSearch = () => {
   const context = useGithubContext;
