@@ -78,7 +78,7 @@ const CodeSearch = () => {
   };
 
   return (
-    <div className="p-4 border-gray-500 border-2 rounded-lg m-2">
+    <div className="p-4 border-gray-500 border-2 rounded-lg overflow-x-hidden">
       <div className="flex gap-4 items-center">
         <h2 className="text-2xl">GitHub Code Search</h2>
 
@@ -113,19 +113,20 @@ const CodeSearch = () => {
           {error && <p style={{ color: "red" }}>Error: {error}</p>}
 
           {results.length > 0 && (
-            <>
+            <div className="flex flex-col gap-2 w-full">
               <h2>Results:</h2>
-              <ul className="border-gray-500 border-2 rounded-lg">
+              <ul className="border-gray-500 border-2 rounded-lg p-2 w-full overflow-y-auto">
                 {results.map((item) => (
                   <li
                     key={item.sha}
-                    className="flex flex-col gap-2 m-2 p-2 border-gray-200 border-2 rounded-lg"
+                    className="flex flex-col gap-2 p-2 border-gray-200 border-2 rounded-lg"
                   >
                     <div className="flex gap-4 items-center">
                       <a
                         href={item.html_url}
                         target="_blank"
                         rel="noopener noreferrer"
+                        className="!text-white hover:!underline"
                       >
                         {item.name} - {item.repository.full_name}
                       </a>
@@ -147,7 +148,7 @@ const CodeSearch = () => {
                   </li>
                 ))}
               </ul>
-            </>
+            </div>
           )}
         </>
       )}

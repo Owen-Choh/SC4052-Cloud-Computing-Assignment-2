@@ -48,7 +48,7 @@ const GeneralInfo: React.FC = () => {
   };
 
   return (
-    <div className="p-4 border-gray-500 border-2 rounded-lg m-2">
+    <div className="p-4 border-gray-500 border-2 rounded-lg w-full">
       <div className="flex gap-4 items-center w-full">
         <h2 className="text-2xl">General Information</h2>
         <button
