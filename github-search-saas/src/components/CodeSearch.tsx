@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { githubSearchCodeApi, octokit } from "../api/apiconfigs";
 import { useGithubContext } from "../context/useGithubContext";
+import { genCodeDescription } from "../geminiAPI/geminiAPI";
 
 const CodeSearch = () => {
   const context = useGithubContext;
@@ -44,6 +45,11 @@ const CodeSearch = () => {
       );
       console.log(otheer.data.content);
       console.log(atob(otheer.data.content));
+      if (otheer.data.content === "") {
+        console.log("code api response is empty");
+        return;
+      }
+      console.log(await genCodeDescription(atob(otheer.data.content)));
     } catch (error) {
       console.error("Error fetching file content:", error);
     }

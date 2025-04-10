@@ -2,6 +2,7 @@ import axios from "axios";
 import { Octokit } from "octokit";
 
 export const GITHUB_TOKEN: string = import.meta.env.VITE_GITHUB_TOKEN as string; // Ensure this is set in your .env file
+export const GEMINI_API_KEY: string = import.meta.env.VITE_GEMINI_API_KEY as string; // Ensure this is set in your .env file
 
 export const octokit = new Octokit({
   auth: GITHUB_TOKEN
