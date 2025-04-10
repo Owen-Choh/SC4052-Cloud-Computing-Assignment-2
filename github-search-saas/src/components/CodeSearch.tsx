@@ -13,13 +13,8 @@ const CodeSearch = () => {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [minimized, setMinimized] = useState(true);
   const [descriptions, setDescriptions] = useState({});
   const [loadingDescriptions, setLoadingDescriptions] = useState({});
-
-  const toggleMinimized = () => {
-    setMinimized((prev) => !prev);
-  };
 
   const handleSearch = async () => {
     setLoading(true);

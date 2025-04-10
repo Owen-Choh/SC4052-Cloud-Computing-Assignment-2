@@ -15,7 +15,6 @@ const GeneralInfo: React.FC = () => {
   const [repos, setRepos] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [minimized, setMinimized] = useState(false);
 
   const fetchRepos = async () => {
     if (username) {
@@ -39,10 +38,6 @@ const GeneralInfo: React.FC = () => {
         setLoading(false);
       }
     }
-  };
-
-  const toggleMinimized = () => {
-    setMinimized((prev) => !prev);
   };
 
   return (

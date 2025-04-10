@@ -3,12 +3,6 @@ import { useGithubContext } from "../context/useGithubContext";
 import { githubSearchRepoApi } from "../api/apiconfigs";
 
 const CodeEdit: React.FC = () => {
-  const context = useGithubContext();
-
-  if (!context) {
-    return <div>Error: Github Context Provider not found</div>;
-  }
-
   const {
     username,
     setUsername,
@@ -18,13 +12,7 @@ const CodeEdit: React.FC = () => {
     setToken,
     selectedItems: selectedItem,
     setSelectedItems: setSelectedItem,
-  } = context;
-
-  const [minimized, setMinimized] = useState(false);
-
-  const toggleMinimized = () => {
-    setMinimized((prev) => !prev);
-  };
+  } = useGithubContext();
 
   return (
     <div className="p-4 border-gray-500 border-2 rounded-lg flex-grow">
@@ -32,9 +20,6 @@ const CodeEdit: React.FC = () => {
         <h2 className="text-2xl">Extra function</h2>
       </div>
       <div className="flex flex-col gap-4 items-start">
-        <div className="flex gap-4 items-center">
-          <label className="flex gap-2">Selected Item:</label>
-        </div>
         <div className="flex flex-col gap-2">
           <h3 className="text-lg">Selected Details:</h3>
           <p>Repository: {repository || "None selected"}</p>
