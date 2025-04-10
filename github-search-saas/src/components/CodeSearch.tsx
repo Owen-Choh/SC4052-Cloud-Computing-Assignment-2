@@ -78,7 +78,7 @@ const CodeSearch = () => {
   };
 
   return (
-    <div className="p-4 border-gray-500 border-2 rounded-lg max-h-screen overflow-x-hidden overflow-y-auto">
+    <div className="p-4 border-gray-500 border-2 rounded-lg overflow-x-hidden overflow-y-auto">
       <div className="flex gap-4 items-center">
         <h2 className="text-2xl">GitHub Code Search</h2>
 
@@ -128,9 +128,9 @@ const CodeSearch = () => {
                         className="mr-2"
                         onChange={(e) => {
                           if (e.target.checked) {
-                            setSelectedItem(item.sha);
+                            setSelectedItem((prev) => [...(prev || []), item.sha]);
                           } else {
-                            setSelectedItem(null);
+                            setSelectedItem((prev) => prev?.filter((sha) => sha !== item.sha) || []);
                           }
                         }}
                       />

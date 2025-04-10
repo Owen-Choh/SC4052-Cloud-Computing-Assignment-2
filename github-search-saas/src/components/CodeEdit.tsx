@@ -42,18 +42,12 @@ const CodeEdit: React.FC = () => {
           <div className="flex gap-4 items-center">
             <label className="flex gap-2">
               Selected Item:
-              <input
-                type="text"
-                value={selectedItem || ""}
-                onChange={(e) => setSelectedItem(e.target.value)}
-                placeholder="Enter item name..."
-              />
             </label>
           </div>
           <div className="flex flex-col gap-2">
             <h3 className="text-lg">Selected Details:</h3>
             <p>Repository: {repository || "None selected"}</p>
-            <p>Item: {selectedItem || "None selected"}</p>
+            <p>Items: {(selectedItem || []).join(", ") || "None selected"}</p>
           </div>
         </div>
       )}

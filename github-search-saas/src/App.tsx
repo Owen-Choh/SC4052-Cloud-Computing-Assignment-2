@@ -5,7 +5,7 @@ import { GithubProvider } from './context/useGithubContext';
 
 function App() {
   return (
-    <div className="App flex flex-col gap-2 w-screen h-screen">
+    <div className="App flex flex-col gap-2 max-w-screen">
       <GithubProvider>
         <GeneralInfo />
         <CodeSearch />
