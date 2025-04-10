@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { githubSearchCodeApi } from "../api/apiconfigs";
+import { githubSearchCodeApi, octokit } from "../api/apiconfigs";
 import { useGithubContext } from "../context/useGithubContext";
 
 const CodeSearch = () => {
@@ -26,6 +26,14 @@ const CodeSearch = () => {
     } finally {
       setLoading(false);
     }
+
+    const otheer = await octokit.request('GET /repos/{owner}/{repo}/contents/{path}', {
+      owner: 'Owen-Choh',
+      repo: 'SC4052-Cloud-Computing-Project',
+      path: 'chatbot-backend/main.go',
+    })
+    console.log(otheer.data.content);
+    console.log(atob(otheer.data.content));
   };
 
   const toggleMinimized = () => {

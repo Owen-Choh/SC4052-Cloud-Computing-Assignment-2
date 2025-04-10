@@ -1,6 +1,11 @@
 import axios from "axios";
+import { Octokit } from "octokit";
 
 export const GITHUB_TOKEN: string = import.meta.env.VITE_GITHUB_TOKEN as string; // Ensure this is set in your .env file
+
+export const octokit = new Octokit({
+  auth: GITHUB_TOKEN
+})
 
 export const GITHUB_API_URL = "https://api.github.com";
 
