@@ -1,3 +1,4 @@
+import CodeEdit from './components/CodeEdit';
 import CodeSearch from './components/CodeSearch';
 import GeneralInfo from './components/GeneralInfo';
 import { GithubProvider } from './context/useGithubContext';
@@ -8,6 +9,7 @@ function App() {
       <GithubProvider>
         <GeneralInfo />
         <CodeSearch />
+        <CodeEdit />
       </GithubProvider>
     </div>
   );

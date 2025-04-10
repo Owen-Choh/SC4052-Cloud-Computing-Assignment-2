@@ -7,6 +7,8 @@ interface GithubContextType {
   setRepository: (repository: string) => void;
   token: string;
   setToken: (token: string) => void;
+  selectedItem: string | null;
+  setSelectedItem: (item: string | null) => void;
 }
 
 export const GithubContext = createContext<GithubContextType | undefined>(undefined);
@@ -23,9 +25,19 @@ export const GithubProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const [username, setUsername] = useState('');
   const [repository, setRepository] = useState('');
   const [token, setToken] = useState('');
+  const [selectedItem, setSelectedItem] = useState<string | null>(null);
 
   return (
-    <GithubContext.Provider value={{ username, setUsername, repository, setRepository, token, setToken }}>
+    <GithubContext.Provider value={{ 
+      username, 
+      setUsername, 
+      repository, 
+      setRepository, 
+      token, 
+      setToken, 
+      selectedItem, 
+      setSelectedItem 
+    }}>
       {children}
     </GithubContext.Provider>
   );
