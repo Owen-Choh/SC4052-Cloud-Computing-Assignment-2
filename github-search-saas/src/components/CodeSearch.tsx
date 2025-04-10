@@ -46,7 +46,7 @@ const CodeSearch = () => {
   const describeCode = async (item) => {
     setLoadingDescriptions((prev) => ({ ...prev, [item.sha]: true }));
     try {
-      const otheer = await octokit.request(
+      const getCodeResponse = await octokit.request(
         "GET /repos/{owner}/{repo}/contents/{path}",
         {
           owner: item.repository.owner.login,
@@ -54,17 +54,19 @@ const CodeSearch = () => {
           path: item.path,
         }
       );
-      console.log(atob(otheer.data.content));
-      if (otheer.data.content === "") {
+      console.log(atob(getCodeResponse.data.content));
+      if (getCodeResponse.data.content === "") {
         console.log("code api response is empty");
         return;
       }
+
+      var desc = query ? query : "all code in the repository";
       const description = await genCodeDescription(
         `User searched for ${query} and wants a description of the code from the file ${
           item.name
         } - ${item.repository.full_name}
         Summarise what this code is doing in two to three sentences. ${atob(
-          otheer.data.content
+          getCodeResponse.data.content
         )}`
       );
       setDescriptions((prev) => ({ ...prev, [item.sha]: description }));
