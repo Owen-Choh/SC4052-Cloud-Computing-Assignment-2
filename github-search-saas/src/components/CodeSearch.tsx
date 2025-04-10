@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { githubSearchCodeApi, octokit } from "../api/apiconfigs";
 import { useGithubContext } from "../context/useGithubContext";
 import { genCodeDescription } from "../geminiAPI/geminiAPI";
+import Markdown from "react-markdown";
 
 const CodeSearch = () => {
   const context = useGithubContext;
@@ -11,6 +12,8 @@ const CodeSearch = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [minimized, setMinimized] = useState(true);
+  const [descriptions, setDescriptions] = useState({});
+  const [loadingDescriptions, setLoadingDescriptions] = useState({});
 
   const toggleMinimized = () => {
     setMinimized((prev) => !prev);
@@ -34,6 +37,7 @@ const CodeSearch = () => {
   };
 
   const describeCode = async (item) => {
+    setLoadingDescriptions((prev) => ({ ...prev, [item.sha]: true }));
     try {
       const otheer = await octokit.request(
         "GET /repos/{owner}/{repo}/contents/{path}",
@@ -43,15 +47,19 @@ const CodeSearch = () => {
           path: item.path,
         }
       );
-      console.log(otheer.data.content);
       console.log(atob(otheer.data.content));
       if (otheer.data.content === "") {
         console.log("code api response is empty");
         return;
       }
-      console.log(await genCodeDescription(atob(otheer.data.content)));
+      const description = await genCodeDescription(
+        "Summarise what this code is doing. " + atob(otheer.data.content)
+      );
+      setDescriptions((prev) => ({ ...prev, [item.sha]: description }));
     } catch (error) {
       console.error("Error fetching file content:", error);
+    } finally {
+      setLoadingDescriptions((prev) => ({ ...prev, [item.sha]: false }));
     }
   };
 
@@ -78,21 +86,40 @@ const CodeSearch = () => {
 
           {error && <p style={{ color: "red" }}>Error: {error}</p>}
 
-          <h2>Results:</h2>
-          <ul className="border-gray-500 border-2 rounded-lg">
-            {results.map((item) => (
-              <li key={item.sha} className="flex gap-4 items-center m-2">
-                <a
-                  href={item.html_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {item.name} - {item.repository.full_name}
-                </a>
-                <button onClick={() => describeCode(item)}>describe</button>
-              </li>
-            ))}
-          </ul>
+          {results.length > 0 && (
+            <>
+              <h2>Results:</h2>
+              <ul className="border-gray-500 border-2 rounded-lg">
+                {results.map((item) => (
+                  <li key={item.sha} className="flex flex-col gap-2 m-2 p-2 border-gray-200 border-2 rounded-lg">
+                    <div className="flex gap-4 items-center">
+                      <a
+                        href={item.html_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {item.name} - {item.repository.full_name}
+                      </a>
+                      <button
+                        onClick={() => describeCode(item)}
+                        disabled={loadingDescriptions[item.sha]}
+                        className="relative"
+                      >
+                        {loadingDescriptions[item.sha]
+                          ? "Loading..."
+                          : "Describe"}
+                      </button>
+                    </div>
+                    {descriptions[item.sha] && (
+                      <div className="p-2">
+                        <Markdown>{descriptions[item.sha]}</Markdown>
+                      </div>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
         </>
       )}
     </div>

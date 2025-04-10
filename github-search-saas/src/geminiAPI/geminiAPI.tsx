@@ -17,12 +17,12 @@ const generationConfig = {
   responseMimeType: "text/plain",
 };
 
-export async function genCodeDescription(code: string) {
+export async function genCodeDescription(prompt: string) {
   const chatSession = model.startChat({
     generationConfig,
   });
 
-  const result = await chatSession.sendMessage("Summarise what this code is doing. " + code);
+  const result = await chatSession.sendMessage(prompt);
 
   return result.response.text();
 }
