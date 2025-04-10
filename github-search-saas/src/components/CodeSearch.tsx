@@ -5,15 +5,23 @@ import { genCodeDescription } from "../geminiAPI/geminiAPI";
 import Markdown from "react-markdown";
 
 const CodeSearch = () => {
-  const { username, repository, token, selectedItems, setSelectedItems } =
-    useGithubContext();
+  const {
+    username,
+    repository,
+    selectedItems,
+    setSelectedItems,
+    query,
+    setQuery,
+    fileTypes,
+    setFileTypes,
+    results,
+    setResults,
+    descriptions,
+    setDescriptions,
+  } = useGithubContext();
 
-  const [query, setQuery] = useState("");
-  const [fileTypes, setFileTypes] = useState("");
-  const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [descriptions, setDescriptions] = useState({});
   const [loadingDescriptions, setLoadingDescriptions] = useState({});
 
   const handleSearch = async () => {
@@ -36,8 +44,9 @@ const CodeSearch = () => {
         userFilter = `+user:${username}`;
       }
 
+      const queryString = `${query}${languageFilter}${userFilter}${nameWithRepo}`;
       const response = await octokit.request("GET /search/code", {
-        q: `${query}${languageFilter}${userFilter}${nameWithRepo}`,
+        q: queryString,
       });
 
       setResults(response.data.items);

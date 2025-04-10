@@ -3,16 +3,17 @@ import { useGithubContext } from "../context/useGithubContext";
 import { githubSearchRepoApi } from "../api/apiconfigs";
 
 const GeneralInfo: React.FC = () => {
-  const context = useGithubContext();
+  const {
+    username,
+    setUsername,
+    repository,
+    setRepository,
+    token,
+    setToken,
+    repos,
+    setRepos,
+  } = useGithubContext();
 
-  if (!context) {
-    return <div>Error: Github Context Provider not found</div>;
-  }
-
-  const { username, setUsername, repository, setRepository, token, setToken } =
-    context;
-
-  const [repos, setRepos] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

@@ -9,6 +9,16 @@ interface GithubContextType {
   setToken: (token: string) => void;
   selectedItems: [];
   setSelectedItems: (item: []) => void;
+  repos: string[];
+  setRepos: (repos: string[]) => void;
+  query: string;
+  setQuery: (query: string) => void;
+  fileTypes: string;
+  setFileTypes: (fileTypes: string) => void;
+  results: any[];
+  setResults: (results: any[]) => void;
+  descriptions: Record<string, string>;
+  setDescriptions: (descriptions: Record<string, string>) => void;
 }
 
 export const GithubContext = createContext<GithubContextType | undefined>(
@@ -30,8 +40,18 @@ export const GithubProvider: React.FC<{ children: ReactNode }> = ({
 }) => {
   const [username, setUsername] = useState("");
   const [repository, setRepository] = useState("");
-  const [token, setToken] = useState("");
+  const [token, setTokenState] = useState("");
   const [selectedItem, setSelectedItem] = useState<[]>([]);
+  const [repos, setRepos] = useState<string[]>([]);
+  const [query, setQuery] = useState("");
+  const [fileTypes, setFileTypes] = useState("");
+  const [results, setResults] = useState<any[]>([]);
+  const [descriptions, setDescriptions] = useState<Record<string, string>>({});
+
+  const setToken = (token: string) => {
+    setTokenState(token);
+    // TODO: update the octokit instance with the new token
+  };
 
   return (
     <GithubContext.Provider
@@ -44,6 +64,16 @@ export const GithubProvider: React.FC<{ children: ReactNode }> = ({
         setToken,
         selectedItems: selectedItem,
         setSelectedItems: setSelectedItem,
+        repos,
+        setRepos,
+        query,
+        setQuery,
+        fileTypes,
+        setFileTypes,
+        results,
+        setResults,
+        descriptions,
+        setDescriptions,
       }}
     >
       {children}
