@@ -55,7 +55,7 @@ const GeneralInfo: React.FC = () => {
       >
         {minimized ? "Minimize" : "Expand"}
       </button>
-      <h2 className="text-4xl">General Information</h2>
+      <h2 className="text-2xl">General Information</h2>
       {minimized && (
         <div className="flex gap-4 items-center">
           <label className="flex gap-2">

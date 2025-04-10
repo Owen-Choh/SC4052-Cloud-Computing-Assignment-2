@@ -10,7 +10,7 @@ const CodeSearch = () => {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [minimized, setMinimized] = useState(false);
+  const [minimized, setMinimized] = useState(true);
 
   const toggleMinimized = () => {
     setMinimized((prev) => !prev);
@@ -63,7 +63,7 @@ const CodeSearch = () => {
       >
         {minimized ? "Minimize" : "Expand"}
       </button>
-      <h1>GitHub Code Search</h1>
+      <h2 className="text-2xl">GitHub Code Search</h2>
       {minimized && (
         <>
           <input
@@ -79,9 +79,9 @@ const CodeSearch = () => {
           {error && <p style={{ color: "red" }}>Error: {error}</p>}
 
           <h2>Results:</h2>
-          <ul>
+          <ul className="border-gray-500 border-2 rounded-lg">
             {results.map((item) => (
-              <li key={item.sha}>
+              <li key={item.sha} className="flex gap-4 items-center m-2">
                 <a
                   href={item.html_url}
                   target="_blank"
