@@ -78,32 +78,37 @@ const CodeSearch = () => {
   };
 
   return (
-    <div className="p-4 border-gray-500 border-2 rounded-lg relative">
-      <button
-        onClick={() => toggleMinimized()}
-        className="absolute top-2 right-2 bg-gray-200 rounded"
-      >
-        {minimized ? "Minimize" : "Expand"}
-      </button>
-      <h2 className="text-2xl">GitHub Code Search</h2>
+    <div className="p-4 border-gray-500 border-2 rounded-lg m-2">
+      <div className="flex gap-4 items-center">
+        <h2 className="text-2xl">GitHub Code Search</h2>
+
+        <button
+          onClick={() => toggleMinimized()}
+          className="ml-auto bg-gray-200 rounded"
+        >
+          {minimized ? "Minimize" : "Expand"}
+        </button>
+      </div>
       {minimized && (
         <>
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Enter code snippet..."
-          />
-          <button onClick={handleSearch} disabled={loading}>
-            {loading ? "Searching..." : "Search"}
-          </button>
-          <input
-            type="text"
-            value={fileTypes}
-            onChange={(e) => setFileTypes(e.target.value)}
-            className="min-w-1/2"
-            placeholder="Enter comma seperated file types to filter..."
-          />
+          <div className="flex gap-4 items-center">
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Enter code snippet..."
+            />
+            <button onClick={handleSearch} disabled={loading}>
+              {loading ? "Searching..." : "Search"}
+            </button>
+            <input
+              type="text"
+              value={fileTypes}
+              onChange={(e) => setFileTypes(e.target.value)}
+              className="min-w-1/2"
+              placeholder="Enter comma seperated file types to filter..."
+            />
+          </div>
 
           {error && <p style={{ color: "red" }}>Error: {error}</p>}
 

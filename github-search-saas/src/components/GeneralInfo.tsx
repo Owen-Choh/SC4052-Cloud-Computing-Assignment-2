@@ -48,14 +48,16 @@ const GeneralInfo: React.FC = () => {
   };
 
   return (
-    <div className="p-4 border-gray-500 border-2 rounded-lg relative">
-      <button
-        onClick={() => toggleMinimized()}
-        className="absolute top-2 right-2 bg-gray-200 rounded"
-      >
-        {minimized ? "Minimize" : "Expand"}
-      </button>
-      <h2 className="text-2xl">General Information</h2>
+    <div className="p-4 border-gray-500 border-2 rounded-lg m-2">
+      <div className="flex gap-4 items-center w-full">
+        <h2 className="text-2xl">General Information</h2>
+        <button
+          onClick={() => toggleMinimized()}
+          className="ml-auto bg-gray-200 rounded"
+        >
+          {minimized ? "Minimize" : "Expand"}
+        </button>
+      </div>
       {minimized && (
         <div className="flex gap-4 items-center">
           <label className="flex gap-2">
