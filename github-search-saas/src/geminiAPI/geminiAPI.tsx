@@ -17,7 +17,7 @@ const generationConfig = {
   responseMimeType: "text/plain",
 };
 
-export async function genCodeDescription(prompt: string) {
+export async function generateContent(prompt: string) {
   const chatSession = model.startChat({
     generationConfig,
   });

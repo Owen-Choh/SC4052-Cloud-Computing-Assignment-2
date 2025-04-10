@@ -23,3 +23,10 @@ export const githubSearchRepoApi = axios.create({
     Authorization: `Bearer ${GITHUB_TOKEN}`,
   },
 });
+
+export const githubGetCodeApi = axios.create({
+  baseURL: 'https://api.github.com/repos',
+  headers: {
+    Authorization: `Bearer ${GITHUB_TOKEN}`,
+  },
+});

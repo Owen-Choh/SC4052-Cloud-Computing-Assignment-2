@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { githubSearchCodeApi, octokit } from "../api/apiconfigs";
 import { useGithubContext } from "../context/useGithubContext";
-import { genCodeDescription } from "../geminiAPI/geminiAPI";
+import { generateContent } from "../geminiAPI/geminiAPI";
 import Markdown from "react-markdown";
 
 const CodeSearch = () => {
@@ -75,7 +75,7 @@ const CodeSearch = () => {
       }
 
       var desc = query ? query : "all code in the repository";
-      const description = await genCodeDescription(
+      const description = await generateContent(
         `User searched for ${query} and wants a description of the code from the file ${
           item.name
         } - ${item.repository.full_name}
