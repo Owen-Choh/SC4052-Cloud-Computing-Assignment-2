@@ -38,8 +38,6 @@ const GeneralInfo: React.FC = () => {
       } finally {
         setLoading(false);
       }
-    } else {
-      setRepos([]);
     }
   };
 
@@ -52,7 +50,7 @@ const GeneralInfo: React.FC = () => {
       <div className="flex gap-4 items-center w-full">
         <h2 className="text-2xl">General Information</h2>
       </div>
-      <div className="flex gap-4 items-center">
+      <div className="flex flex-col gap-4 mt-4">
         <label className="flex gap-2">
           GitHub Token:
           <input
@@ -93,14 +91,14 @@ const GeneralInfo: React.FC = () => {
               ))}
             </select>
           )}
+          <button
+            onClick={fetchRepos}
+            disabled={loading}
+            className="bg-blue-500 text-white px-4 py-2 rounded"
+          >
+            {loading ? "Fetching..." : "Get Repos"}
+          </button>
         </label>
-        <button
-          onClick={fetchRepos}
-          disabled={loading}
-          className="bg-blue-500 text-white px-4 py-2 rounded"
-        >
-          {loading ? "Fetching..." : "Get Repos"}
-        </button>
       </div>
     </div>
   );

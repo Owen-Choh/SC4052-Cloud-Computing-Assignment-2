@@ -32,8 +32,17 @@ const CodeSearch = () => {
           languageFilter += `+language:${type}`;
         }
       });
+      var userFilter = "";
+      
+      var nameWithRepo = "";
+      if (repository && username) {
+        nameWithRepo = `+repo:${username}/${repository}`;
+      } else if (username) {
+        userFilter = `+user:${username}`;
+      }
+
       const response = await octokit.request("GET /search/code", {
-        q: `${query}${languageFilter}+user:Owen-Choh`,
+        q: `${query}${languageFilter}${userFilter}${nameWithRepo}`,
       });
 
       setResults(response.data.items);
