@@ -48,68 +48,60 @@ const GeneralInfo: React.FC = () => {
   };
 
   return (
-    <div className="p-4 border-gray-500 border-2 rounded-lg w-full">
+    <div className="p-4 border-gray-500 border-2 rounded-lg flex-grow">
       <div className="flex gap-4 items-center w-full">
         <h2 className="text-2xl">General Information</h2>
+      </div>
+      <div className="flex gap-4 items-center">
+        <label className="flex gap-2">
+          GitHub Token:
+          <input
+            type="password"
+            value={token}
+            onChange={(e) => setToken(e.target.value)}
+          />
+        </label>
+        <label className="flex gap-2">
+          GitHub Username:
+          <input
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+          />
+        </label>
+        <label className="flex gap-2">
+          Repository Name:
+          {loading ? (
+            <span>Loading...</span>
+          ) : error ? (
+            <span className="text-red-500">{error}</span>
+          ) : (
+            <select
+              value={repository}
+              onChange={(e) => {
+                const selectedRepo = e.target.value;
+                setRepository(selectedRepo); // Update context provider
+              }}
+            >
+              <option value="" className="text-black">
+                Select a repository
+              </option>
+              {repos.map((repo) => (
+                <option key={repo} value={repo} className="text-black">
+                  {repo}
+                </option>
+              ))}
+            </select>
+          )}
+        </label>
         <button
-          onClick={() => toggleMinimized()}
-          className="ml-auto bg-gray-200 rounded"
+          onClick={fetchRepos}
+          disabled={loading}
+          className="bg-blue-500 text-white px-4 py-2 rounded"
         >
-          {minimized ? "Minimize" : "Expand"}
+          {loading ? "Fetching..." : "Get Repos"}
         </button>
       </div>
-      {minimized && (
-        <div className="flex gap-4 items-center">
-          <label className="flex gap-2">
-            GitHub Token:
-            <input
-              type="password"
-              value={token}
-              onChange={(e) => setToken(e.target.value)}
-            />
-          </label>
-          <label className="flex gap-2">
-            GitHub Username:
-            <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-            />
-          </label>
-          <label className="flex gap-2">
-            Repository Name:
-            {loading ? (
-              <span>Loading...</span>
-            ) : error ? (
-              <span className="text-red-500">{error}</span>
-            ) : (
-              <select
-                value={repository}
-                onChange={(e) => {
-                  const selectedRepo = e.target.value;
-                  setRepository(selectedRepo); // Update context provider
-                }}
-              >
-                <option value="" className="text-black">
-                  Select a repository
-                </option>
-                {repos.map((repo) => (
-                  <option key={repo} value={repo} className="text-black">
-                    {repo}
-                  </option>
-                ))}
-              </select>
-            )}
-          </label>
-          <button
-            onClick={fetchRepos}
-            disabled={loading}
-            className="bg-blue-500 text-white px-4 py-2 rounded"
-          >
-            {loading ? "Fetching..." : "Get Repos"}
-          </button>
-        </div>
-      )}
     </div>
   );
 };

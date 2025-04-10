@@ -5,7 +5,8 @@ import { genCodeDescription } from "../geminiAPI/geminiAPI";
 import Markdown from "react-markdown";
 
 const CodeSearch = () => {
-  const { username, repository, token, selectedItem, setSelectedItem } = useGithubContext();
+  const { username, repository, token, selectedItems, setSelectedItems } =
+    useGithubContext();
 
   const [query, setQuery] = useState("");
   const [fileTypes, setFileTypes] = useState("");
@@ -78,93 +79,84 @@ const CodeSearch = () => {
   };
 
   return (
-    <div className="p-4 border-gray-500 border-2 rounded-lg overflow-x-hidden overflow-y-auto">
+    <div className="p-4 border-gray-500 border-2 rounded-lg flex-grow overflow-x-hidden overflow-y-auto">
       <div className="flex gap-4 items-center">
         <h2 className="text-2xl">GitHub Code Search</h2>
-
-        <button
-          onClick={() => toggleMinimized()}
-          className="ml-auto bg-gray-200 rounded"
-        >
-          {minimized ? "Minimize" : "Expand"}
-        </button>
       </div>
-      {minimized && (
-        <>
-          <div className="flex gap-4 items-center">
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Enter code snippet..."
-            />
-            <button onClick={handleSearch} disabled={loading}>
-              {loading ? "Searching..." : "Search"}
-            </button>
-            <input
-              type="text"
-              value={fileTypes}
-              onChange={(e) => setFileTypes(e.target.value)}
-              className="min-w-1/2"
-              placeholder="Enter comma seperated file types to filter..."
-            />
-          </div>
+      <div className="flex gap-4 items-center">
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Enter code snippet..."
+        />
+        <button onClick={handleSearch} disabled={loading}>
+          {loading ? "Searching..." : "Search"}
+        </button>
+        <input
+          type="text"
+          value={fileTypes}
+          onChange={(e) => setFileTypes(e.target.value)}
+          placeholder="Filter by comma seperated file types..."
+        />
+      </div>
 
-          {error && <p style={{ color: "red" }}>Error: {error}</p>}
+      {error && <p style={{ color: "red" }}>Error: {error}</p>}
 
-          {results.length > 0 && (
-            <div className="flex flex-col gap-2">
-              <h2>Results:</h2>
-              <ul className="border-gray-500 border-2 rounded-lg p-2">
-                {results.map((item) => (
-                  <li
-                    key={item.sha}
-                    className="flex flex-col gap-2 p-2 border-gray-200 border-2 rounded-lg"
+      {results.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <h2>Results:</h2>
+          <ul className="border-gray-500 border-2 rounded-lg p-2">
+            {results.map((item) => (
+              <li
+                key={item.sha}
+                className="flex flex-col gap-2 p-2 border-gray-200 border-2 rounded-lg"
+              >
+                <div className="flex gap-4 items-center">
+                  <input
+                    type="checkbox"
+                    id={`select-${item.sha}`}
+                    className="mr-2"
+                    checked={selectedItems.includes(item.sha) || false}
+                    onChange={(e) => {
+                      console.log(selectedItems);
+                      if (e.target.checked) {
+                        setSelectedItems((prev) => [...(prev || []), item.sha]);
+                      } else {
+                        setSelectedItems(
+                          (prev) =>
+                            prev?.filter((sha) => sha !== item.sha) || []
+                        );
+                      }
+                    }}
+                  />
+                  <label htmlFor={`select-${item.sha}`} className="flex-grow">
+                    <a
+                      href={item.html_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="!text-white hover:!underline"
+                    >
+                      {item.name} - {item.repository.full_name}
+                    </a>
+                  </label>
+                  <button
+                    onClick={() => describeCode(item)}
+                    disabled={loadingDescriptions[item.sha]}
+                    className="relative"
                   >
-                    <div className="flex gap-4 items-center">
-                      <input
-                        type="checkbox"
-                        id={`select-${item.sha}`}
-                        className="mr-2"
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedItem((prev) => [...(prev || []), item.sha]);
-                          } else {
-                            setSelectedItem((prev) => prev?.filter((sha) => sha !== item.sha) || []);
-                          }
-                        }}
-                      />
-                      <label htmlFor={`select-${item.sha}`} className="flex-grow">
-                        <a
-                          href={item.html_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="!text-white hover:!underline"
-                        >
-                          {item.name} - {item.repository.full_name}
-                        </a>
-                      </label>
-                      <button
-                        onClick={() => describeCode(item)}
-                        disabled={loadingDescriptions[item.sha]}
-                        className="relative"
-                      >
-                        {loadingDescriptions[item.sha]
-                          ? "Loading..."
-                          : "Describe"}
-                      </button>
-                    </div>
-                    {descriptions[item.sha] && (
-                      <div className="p-2">
-                        <Markdown>{descriptions[item.sha]}</Markdown>
-                      </div>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </>
+                    {loadingDescriptions[item.sha] ? "Loading..." : "Describe"}
+                  </button>
+                </div>
+                {descriptions[item.sha] && (
+                  <div className="p-2">
+                    <Markdown>{descriptions[item.sha]}</Markdown>
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
     </div>
   );
