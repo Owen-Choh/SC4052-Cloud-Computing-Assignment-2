@@ -3,16 +3,8 @@ import { useGithubContext } from "../context/useGithubContext";
 import { githubSearchRepoApi } from "../api/apiconfigs";
 
 const CodeEdit: React.FC = () => {
-  const {
-    username,
-    setUsername,
-    repository,
-    setRepository,
-    token,
-    setToken,
-    selectedItems: selectedItem,
-    setSelectedItems: setSelectedItem,
-  } = useGithubContext();
+  const { username, repository, token, selectedItems, results } =
+    useGithubContext();
 
   return (
     <div className="p-4 border-gray-500 border-2 rounded-lg flex-grow">
@@ -22,8 +14,17 @@ const CodeEdit: React.FC = () => {
       <div className="flex flex-col gap-4 items-start">
         <div className="flex flex-col gap-2">
           <h3 className="text-lg">Selected Details:</h3>
+          <p>Username: {username || "None selected"}</p>
           <p>Repository: {repository || "None selected"}</p>
-          <p>Items: {(selectedItem || []).join(", ") || "None selected"}</p>
+          <p>
+            Items:{" "}
+            {selectedItems && selectedItems.length > 0
+              ? results
+                  .filter((item) => selectedItems.includes(item.sha))
+                  .map((item) => `${item.name} (${item.repository.full_name})`)
+                  .join(", ")
+              : "None selected"}
+          </p>
         </div>
       </div>
     </div>
