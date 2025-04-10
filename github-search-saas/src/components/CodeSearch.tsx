@@ -11,6 +11,10 @@ const CodeSearch = () => {
   const [error, setError] = useState(null);
   const [minimized, setMinimized] = useState(false);
 
+  const toggleMinimized = () => {
+    setMinimized((prev) => !prev);
+  };
+
   const handleSearch = async () => {
     setLoading(true);
     setError(null);
@@ -26,18 +30,23 @@ const CodeSearch = () => {
     } finally {
       setLoading(false);
     }
-
-    const otheer = await octokit.request('GET /repos/{owner}/{repo}/contents/{path}', {
-      owner: 'Owen-Choh',
-      repo: 'SC4052-Cloud-Computing-Project',
-      path: 'chatbot-backend/main.go',
-    })
-    console.log(otheer.data.content);
-    console.log(atob(otheer.data.content));
   };
 
-  const toggleMinimized = () => {
-    setMinimized((prev) => !prev);
+  const describeCode = async (item) => {
+    try {
+      const otheer = await octokit.request(
+        "GET /repos/{owner}/{repo}/contents/{path}",
+        {
+          owner: item.repository.owner.login,
+          repo: item.repository.name,
+          path: item.path,
+        }
+      );
+      console.log(otheer.data.content);
+      console.log(atob(otheer.data.content));
+    } catch (error) {
+      console.error("Error fetching file content:", error);
+    }
   };
 
   return (
@@ -46,34 +55,40 @@ const CodeSearch = () => {
         onClick={() => toggleMinimized()}
         className="absolute top-2 right-2 bg-gray-200 px-2 py-1 rounded"
       >
-        {minimized? "Minimize" : "Expand"}
+        {minimized ? "Minimize" : "Expand"}
       </button>
       <h1>GitHub Code Search</h1>
-      {minimized && <>
-      <input
-        type="text"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder="Enter code snippet..."
-      />
-      <button onClick={handleSearch} disabled={loading}>
-        {loading ? "Searching..." : "Search"}
-      </button>
+      {minimized && (
+        <>
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Enter code snippet..."
+          />
+          <button onClick={handleSearch} disabled={loading}>
+            {loading ? "Searching..." : "Search"}
+          </button>
 
-      {error && <p style={{ color: "red" }}>Error: {error}</p>}
+          {error && <p style={{ color: "red" }}>Error: {error}</p>}
 
-      <h2>Results:</h2>
-      <ul>
-        {results.map((item) => (
-          <li key={item.sha}>
-            <a href={item.html_url} target="_blank" rel="noopener noreferrer">
-              {item.name} - {item.repository.full_name}
-            </a>
-          </li>
-        ))}
-      </ul>
-      </>
-}
+          <h2>Results:</h2>
+          <ul>
+            {results.map((item) => (
+              <li key={item.sha}>
+                <a
+                  href={item.html_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {item.name} - {item.repository.full_name}
+                </a>
+                <button onClick={() => describeCode(item)}>describe</button>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
     </div>
   );
 };
