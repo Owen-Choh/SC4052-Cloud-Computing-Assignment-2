@@ -25,6 +25,11 @@ const CodeSearch = () => {
   const [loadingDescriptions, setLoadingDescriptions] = useState({});
 
   const handleSearch = async () => {
+    setResults([]);
+    setSelectedItems([]);
+    // better to keep the descriptions when a new search is made since api calls are expensive
+    // and can use the descriptions from the previous search if sha is same
+    // setDescriptions({}); 
     setLoading(true);
     setError(null);
 
