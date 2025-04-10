@@ -48,7 +48,7 @@ const GeneralInfo: React.FC = () => {
   };
 
   return (
-    <div className="p-4 w-screen border-gray-500 border-2 rounded-lg relative">
+    <div className="p-4 border-gray-500 border-2 rounded-lg relative">
       <button
         onClick={() => toggleMinimized()}
         className="absolute top-2 right-2 bg-gray-200 rounded"

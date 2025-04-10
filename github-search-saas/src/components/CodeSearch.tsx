@@ -5,9 +5,10 @@ import { genCodeDescription } from "../geminiAPI/geminiAPI";
 import Markdown from "react-markdown";
 
 const CodeSearch = () => {
-  const context = useGithubContext;
+  const { username, repository, token } = useGithubContext();
 
   const [query, setQuery] = useState("");
+  const [fileTypes, setFileTypes] = useState("");
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -24,10 +25,16 @@ const CodeSearch = () => {
     setError(null);
 
     try {
-      const response = await githubSearchCodeApi.get(
-        githubSearchCodeApi.defaults.baseURL +
-          `?q=${query}+language:ts+OR+language:tsx+user:Owen-Choh`
-      );
+      var languageFilter = "";
+      fileTypes.split(",").forEach((type) => {
+        if (type.trim() !== "") {
+          languageFilter += `+language:${type}`;
+        }
+      });
+      const response = await octokit.request("GET /search/code", {
+        q: `${query}${languageFilter}+user:Owen-Choh`,
+      });
+
       setResults(response.data.items);
     } catch (err) {
       setError(err.message);
@@ -53,7 +60,12 @@ const CodeSearch = () => {
         return;
       }
       const description = await genCodeDescription(
-        "Summarise what this code is doing. " + atob(otheer.data.content)
+        `User searched for ${query} and wants a description of the code from the file ${
+          item.name
+        } - ${item.repository.full_name}
+        Summarise what this code is doing in two to three sentences. ${atob(
+          otheer.data.content
+        )}`
       );
       setDescriptions((prev) => ({ ...prev, [item.sha]: description }));
     } catch (error) {
@@ -64,10 +76,10 @@ const CodeSearch = () => {
   };
 
   return (
-    <div className="p-4 w-screen border-gray-500 border-2 rounded-lg relative">
+    <div className="p-4 border-gray-500 border-2 rounded-lg relative">
       <button
         onClick={() => toggleMinimized()}
-        className="absolute top-2 right-2 bg-gray-200 px-2 py-1 rounded"
+        className="absolute top-2 right-2 bg-gray-200 rounded"
       >
         {minimized ? "Minimize" : "Expand"}
       </button>
@@ -83,6 +95,13 @@ const CodeSearch = () => {
           <button onClick={handleSearch} disabled={loading}>
             {loading ? "Searching..." : "Search"}
           </button>
+          <input
+            type="text"
+            value={fileTypes}
+            onChange={(e) => setFileTypes(e.target.value)}
+            className="min-w-1/2"
+            placeholder="Enter comma seperated file types to filter..."
+          />
 
           {error && <p style={{ color: "red" }}>Error: {error}</p>}
 
@@ -91,7 +110,10 @@ const CodeSearch = () => {
               <h2>Results:</h2>
               <ul className="border-gray-500 border-2 rounded-lg">
                 {results.map((item) => (
-                  <li key={item.sha} className="flex flex-col gap-2 m-2 p-2 border-gray-200 border-2 rounded-lg">
+                  <li
+                    key={item.sha}
+                    className="flex flex-col gap-2 m-2 p-2 border-gray-200 border-2 rounded-lg"
+                  >
                     <div className="flex gap-4 items-center">
                       <a
                         href={item.html_url}
