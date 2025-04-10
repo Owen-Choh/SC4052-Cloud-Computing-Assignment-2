@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useGithubContext } from "../context/useGithubContext";
-import { githubGetCodeApi, githubSearchRepoApi } from "../api/apiconfigs";
+import { githubGetCodeApi } from "../api/apiconfigs";
 import { generateContent } from "../geminiAPI/geminiAPI";
 
 const CodeEdit: React.FC = () => {
@@ -10,6 +10,10 @@ const CodeEdit: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [output, setOutput] = useState<string>("");
   const [cache, setCache] = useState<Map<string, string>>(new Map());
+
+  useEffect(() => {
+    setCache(new Map());
+  },[repository]);
 
   const generateDocumentation = async () => {
     setLoading(true);
