@@ -40,16 +40,100 @@ const CodeEdit: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
-  const generateDocumentation = async () => {
-    setLoading(true);
-    setError(null);
+  const validateInitialState = (): boolean => {
     if (!repository) {
       setError("No repository selected. Please select a repo first.");
+      return false;
+    }
+    if (results && results.length == 0) {
+      setError(
+        "No results found. Please attempt a search to see what is in your repo first."
+      );
+      return false;
+    }
+    return true;
+  };
+
+  const checkCache = (): {
+    repoFileContents: string;
+    finalPrompt: string;
+    generatedContent: string;
+  } => {
+    return {
+      repoFileContents: cache.get("repoFileContents") || "",
+      finalPrompt: cache.get("finalPrompt") || "",
+      generatedContent: cache.get("generatedContent") || "",
+    };
+  };
+
+  const fetchFileContents = async (
+    items: any[]
+  ): Promise<{ fileContents: string; errmsg: string }> => {
+    var fileContents = "";
+    var errmsg = "";
+    for (const item of results) {
+      try {
+        const response = await githubGetCodeApi.get(
+          `/${item.repository.full_name}/contents/${item.path}`
+        );
+        const fileContent = atob(response.data.content);
+        fileContents += item.path + "\n" + fileContent + "\n\n";
+      } catch (error) {
+        console.error(`Error fetching file content for ${item.path}: ${error}`);
+        errmsg += item.path + "; ";
+      }
+    }
+
+    return { fileContents, errmsg };
+  };
+
+  const generateREADME = async () => {
+    setLoading(true);
+    setError(null);
+    if (!validateInitialState()) {
       setLoading(false);
       return;
     }
-    if (results && results.length == 0) {
-      setError("No results found. Please attempt a search first.");
+    var { repoFileContents, finalPrompt, generatedContent } = checkCache();
+
+    if (repoFileContents == "" || cache.has("repoFileContents")) {
+      const { fileContents, errmsg } = await fetchFileContents(results);
+      if (errmsg) {
+        setError("Error fetching file content for: " + errmsg);
+      }
+      repoFileContents = fileContents;
+      cache.set("repoFileContents", repoFileContents);
+    }
+
+    if (finalPrompt == "") {
+      finalPrompt = `Generate a README for the repository ${repository} with the following code. For conciseness, you do not need to include the code directly in the README, you may chose to include the file path if required. Write the README in a way that is easy to understand for a beginner. The README should use markdown styling, do not wrap your entire output in markdown tags. Also include notes for anything the reader should look out for\n\n${repoFileContents}`;
+      cache.set("finalPrompt", finalPrompt);
+    }
+
+    console.log(finalPrompt);
+    if (!finalPrompt) {
+      setError("No content to generate README for.");
+      setLoading(false);
+      return;
+    }
+
+    var generatedContent = "";
+    if (!cache.has("generatedContent")) {
+      generatedContent = await generateContentWithConfig(finalPrompt, {
+        temperature: modelTemperature,
+      });
+      cache.set("generatedContent", generatedContent);
+    } else {
+      generatedContent = cache.get("generatedContent") || "";
+    }
+
+    setOutput(generatedContent);
+  };
+
+  const generateDocumentation = async () => {
+    setLoading(true);
+    setError(null);
+    if (!validateInitialState()) {
       setLoading(false);
       return;
     }
@@ -145,6 +229,7 @@ const CodeEdit: React.FC = () => {
             <button onClick={generateDocumentation}>
               Generate Documentation
             </button>
+            <button onClick={generateREADME}>Generate README</button>
             <button onClick={clearGenContent}>Clear generated content</button>
             <button onClick={clearRepoContent}>Clear repo content</button>
           </div>
