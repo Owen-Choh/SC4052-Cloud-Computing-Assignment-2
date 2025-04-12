@@ -13,7 +13,9 @@ const CodeEdit: React.FC = () => {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [output, setOutput] = useState<string>(cache.get("generatedContent") || "");
+  const [output, setOutput] = useState<string>(
+    cache.get("generatedContent") || ""
+  );
   const [modelTemperature, setModelTemperature] = useState<number>(0);
 
   const clearGenContent = () => {
@@ -180,6 +182,80 @@ const CodeEdit: React.FC = () => {
     setLoading(false);
   };
 
+  const submitPullRequest = async () => {
+    console.log("Submitting pull request...");
+    try {
+      // get default branch
+      const defaultBranchResponse = await githubGetCodeApi.get(
+        `/${username}/${repository}`
+      );
+      const defaultBranch = defaultBranchResponse.data.default_branch;
+      console.log("default branch: ", defaultBranch);
+
+      // get latest commit and tree
+      const commitAndTreeResponse = await githubGetCodeApi.get(
+        `/${username}/${repository}/branches/${defaultBranch}`
+      );
+      const oldCommit = commitAndTreeResponse.data.commit.sha;
+      const oldTree = commitAndTreeResponse.data.commit.commit.tree.sha;
+      console.log("commit and tree: ", oldCommit, oldTree);
+
+      // create new tree with new file
+      const newTreeResponse = await githubGetCodeApi.post(
+        `/${username}/${repository}/git/trees`,
+        {
+          base_tree: oldTree,
+          tree: [
+            {
+              path: "README.md",
+              mode: "100644",
+              type: "blob",
+              content: output,
+            },
+          ],
+        }
+      );
+      const newTree = newTreeResponse.data.sha;
+
+      // create new commit object
+      const newCommitResponse = await githubGetCodeApi.post(
+        `/${username}/${repository}/git/commits`,
+        {
+          message: "Update README.md by github search saas",
+          tree: newTree,
+          parents: [oldCommit],
+        }
+      );
+      const newCommit = newCommitResponse.data.sha;
+      console.log("new commit: ", newCommit);
+
+      // create new reference (branch) for the commit
+      const newBranchName = "update-readme-" + Date.now();
+      const newReferenceResponse = await githubGetCodeApi.post(
+        `/${username}/${repository}/git/refs`,
+        {
+          ref: "refs/heads/" + newBranchName,
+          sha: newCommit,
+        }
+      );
+      console.log("new reference: ", newReferenceResponse);
+
+      //  '{"title":"Amazing new feature","body":"Please pull these awesome changes in!","head":"octocat:new-feature","base":"master"}'
+      // create pull request
+      const pullRequestResponse = await githubGetCodeApi.post(
+        `/${username}/${repository}/pulls`,
+        {
+          title: "Update README.md by github search saas",
+          body: "Please pull these awesome changes in!",
+          head: newBranchName,
+          base: defaultBranch,
+        }
+      );
+    } catch (error) {
+      console.error("Error submitting pull request: ", error);
+    }
+  };
+
   return (
     <div className="p-4 border-gray-500 border-2 rounded-lg flex-grow">
       <div className="flex flex-col gap-4 items-start">
@@ -255,12 +331,18 @@ const CodeEdit: React.FC = () => {
             >
               Download
             </button>
+            <button
+              onClick={() => submitPullRequest()}
+              className="!bg-green-800 !p-2"
+            >
+              Submit Pull Request
+            </button>
           </div>
           <textarea
             className="w-full h-64 border-gray-500 border-2 rounded-lg p-2"
             placeholder="Generated documentation will appear here..."
-            readOnly
             value={output}
+            onChange={(e) => setOutput(e.target.value)}
           ></textarea>
         </div>
       </div>
