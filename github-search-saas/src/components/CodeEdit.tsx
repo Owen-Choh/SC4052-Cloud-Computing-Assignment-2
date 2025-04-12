@@ -8,12 +8,12 @@ import {
 import { Slider } from "@mui/material";
 
 const CodeEdit: React.FC = () => {
-  const { username, repository, selectedItems, results } = useGithubContext();
+  const { username, repository, selectedItems, results, cache, setCache } =
+    useGithubContext();
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [output, setOutput] = useState<string>("");
-  const [cache, setCache] = useState<Map<string, string>>(new Map());
+  const [output, setOutput] = useState<string>(cache.get("generatedContent") || "");
   const [modelTemperature, setModelTemperature] = useState<number>(0);
 
   const clearGenContent = () => {

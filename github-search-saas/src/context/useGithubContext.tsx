@@ -19,6 +19,8 @@ interface GithubContextType {
   setResults: (results: any[]) => void;
   descriptions: Record<string, string>;
   setDescriptions: (descriptions: Record<string, string>) => void;
+  cache: Map<string, string>;
+  setCache: (cache: Map<string, string>) => void;
 }
 
 export const GithubContext = createContext<GithubContextType | undefined>(
@@ -47,6 +49,7 @@ export const GithubProvider: React.FC<{ children: ReactNode }> = ({
   const [fileTypes, setFileTypes] = useState("");
   const [results, setResults] = useState<any[]>([]);
   const [descriptions, setDescriptions] = useState<Record<string, string>>({});
+  const [cache, setCache] = useState<Map<string, string>>(new Map());
 
   const setToken = (token: string) => {
     setTokenState(token);
@@ -74,6 +77,8 @@ export const GithubProvider: React.FC<{ children: ReactNode }> = ({
         setResults,
         descriptions,
         setDescriptions,
+        cache,
+        setCache,
       }}
     >
       {children}
