@@ -4,6 +4,7 @@ import { githubGetCodeApi } from "../api/apiconfigs";
 import {
   generateContentWithConfig,
   generateWithSystemInstructionAndConfig,
+  generateWithSystemInstructionConfigAndTools,
 } from "../geminiAPI/geminiAPI";
 import { Slider } from "@mui/material";
 
@@ -17,6 +18,7 @@ const CodeEdit: React.FC = () => {
     cache.get("generatedContent") || ""
   );
   const [modelTemperature, setModelTemperature] = useState<number>(0);
+  const [autoPullRequest, setAutoPullRequest] = useState<boolean>(false);
 
   const clearGenContent = () => {
     cache.delete("generatedContent");
@@ -118,19 +120,49 @@ const CodeEdit: React.FC = () => {
       return;
     }
 
-    const systemInstruction = `Generate a README for the code repository ${repository}, only return the contents of the README.\nFormat the README using standard Markdown syntax for text styling. Avoid using code blocks unless displaying code.\nYou do not need to include the code directly in the README, you may chose to include the file path if required.\nWrite the README in a way that is easy to understand for a beginner.\nInclude a short description of what the repository contains, an overview of the code, architecture (if applicable) and how to set up and use it.\nAlso include brief notes that the reader should look out for when using the repository such as not commiting their env file.`;
-    var generatedContent = "";
-    if (!cache.has("generatedContent")) {
-      generatedContent = await generateWithSystemInstructionAndConfig(
-        systemInstruction,
-        finalPrompt,
-        {
-          temperature: modelTemperature,
+    if (generatedContent == "") {
+      if (autoPullRequest) {
+        console.log("Auto pull request enabled.");
+        const systemInstruction = `Submit a pull request for a suggested README file for this code repository ${repository}.\nFormat the README using standard Markdown syntax for text styling. Avoid using code blocks unless displaying code.\nYou do not need to include the code directly in the README, you may chose to include the file path if required.\nWrite the README in a way that is easy to understand for a beginner.\nInclude a short description of what the repository contains, an overview of the code, architecture (if applicable) and how to set up and use it.\nAlso include brief notes that the reader should look out for when using the repository such as not commiting their env file.`;
+        
+        const genWithToolsResponse =
+          await generateWithSystemInstructionConfigAndTools(
+            systemInstruction,
+            finalPrompt,
+            {
+              temperature: modelTemperature,
+            }
+          );
+        console.log("genWithToolsResponse: ", genWithToolsResponse);
+        if (genWithToolsResponse.functionCalls) {
+          console.log("function calls: ", genWithToolsResponse.functionCalls);
+          const tool_call = genWithToolsResponse.functionCalls[0];
+          if (tool_call.name === "submit_pull_request" && tool_call.args) {
+            const result = submitPullRequest(
+              tool_call.args.filePath,
+              tool_call.args.commitMessage,
+              tool_call.args.branchName,
+              tool_call.args.pullRequestTitle,
+              tool_call.args.pullRequestBody,
+              tool_call.args.fileContent
+            );
+          }
         }
-      );
+        generatedContent = genWithToolsResponse.text || "";
+      } else {
+        const systemInstruction = `Generate a README for the code repository ${repository}, only return the contents of the README.\nFormat the README using standard Markdown syntax for text styling. Avoid using code blocks unless displaying code.\nYou do not need to include the code directly in the README, you may chose to include the file path if required.\nWrite the README in a way that is easy to understand for a beginner.\nInclude a short description of what the repository contains, an overview of the code, architecture (if applicable) and how to set up and use it.\nAlso include brief notes that the reader should look out for when using the repository such as not commiting their env file.`;
+
+        generatedContent =
+          (await generateWithSystemInstructionAndConfig(
+            systemInstruction,
+            finalPrompt,
+            {
+              temperature: modelTemperature,
+            }
+          )) || "";
+      }
+
       cache.set("generatedContent", generatedContent);
-    } else {
-      generatedContent = cache.get("generatedContent") || "";
     }
 
     setOutput(generatedContent);
@@ -245,10 +277,11 @@ const CodeEdit: React.FC = () => {
       console.log("new commit: ", newCommit);
 
       // create new reference (branch) for the commit;
+      const newBranchName = branchName + Date.now();
       const newReferenceResponse = await githubGetCodeApi.post(
         `/${username}/${repository}/git/refs`,
         {
-          ref: "refs/heads/" + branchName,
+          ref: `refs/heads/${newBranchName}`,
           sha: newCommit,
         }
       );
@@ -261,13 +294,15 @@ const CodeEdit: React.FC = () => {
         {
           title: pullRequestTitle,
           body: pullRequestBody,
-          head: branchName,
+          head: newBranchName,
           base: defaultBranch,
         }
       );
       console.log("pull request response: ", pullRequestResponse);
+      return "Pull request submitted successfully!";
     } catch (error) {
       console.error("Error submitting pull request: ", error);
+      return "Error submitting pull request: " + error;
     }
   };
 
@@ -314,6 +349,14 @@ const CodeEdit: React.FC = () => {
             ) : (
               <p className="text-red-500 font-bold">AI Output not Cached</p>
             )}
+          </div>
+          <div className="flex gap-4 items-center mb-2">
+            <p>Auto Submit Pull Request?</p>
+            <input
+              type="checkbox"
+              checked={autoPullRequest}
+              onChange={(e) => setAutoPullRequest(e.target.checked)}
+            />
           </div>
           <div className="flex gap-4">
             <button onClick={generateDocumentation}>

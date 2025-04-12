@@ -1,5 +1,5 @@
 import { GEMINI_API_KEY } from "../api/apiconfigs";
-import { GoogleGenAI, GenerateContentConfig, Type } from "@google/genai";
+import { GoogleGenAI, GenerateContentConfig, Type, FunctionCallingConfigMode } from "@google/genai";
 
 const apiKey = GEMINI_API_KEY;
 const genAI = new GoogleGenAI({ apiKey: apiKey });
@@ -75,11 +75,18 @@ export async function generateWithSystemInstructionConfigAndTools(
           functionDeclarations: [submitPullRequestFunctionDeclaration],
         },
       ],
+      toolConfig: {
+        functionCallingConfig: {
+          // Force it to call a function
+          mode: FunctionCallingConfigMode.ANY,
+          allowedFunctionNames: ['submit_pull_request'],
+        }
+      },
     },
     contents: prompt,
   });
 
-  return result.text;
+  return result;
 }
 
 const submitPullRequestFunctionDeclaration = {
