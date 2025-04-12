@@ -23,6 +23,31 @@ const CodeSearch = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [loadingDescriptions, setLoadingDescriptions] = useState({});
+  
+  function parseData(data) {
+    // If the data is an array, return that
+      if (Array.isArray(data)) {
+        return data
+      }
+  
+    // Some endpoints respond with 204 No Content instead of empty array
+    //   when there is no data. In that case, return an empty array.
+    if (!data) {
+      return []
+    }
+  
+    // Otherwise, the array of items that we want is in an object
+    // Delete keys that don't include the array of items
+    delete data.incomplete_results;
+    delete data.repository_selection;
+    delete data.total_count;
+    // Pull out the array of items
+    const namespaceKey = Object.keys(data)[0];
+    data = data[namespaceKey];
+  
+    return data;
+  }
+
 
   const handleSearch = async () => {
     setResults([]);
@@ -49,10 +74,38 @@ const CodeSearch = () => {
         userFilter = `+user:${username}`;
       }
 
+      const nextPattern = /(?<=<)([\S]*)(?=>; rel="Next")/i;
+      let pagesRemaining = true;
+      let data = [];
       const queryString = `${query}${languageFilter}${userFilter}${nameWithRepo}`;
-      const response = await octokit.request("GET /search/code", {
+      let response = await octokit.request("GET /search/code", {
         q: queryString,
+        per_page: 100,
       });
+      pagesRemaining = response.data.total_count > 100
+
+      let parsedData = parseData(response.data)
+      data = [...data, ...parsedData];
+      
+      let linkHeader = response.headers.link;
+      while (pagesRemaining) {
+        let url = linkHeader.match(nextPattern)[0] || null;
+        
+        if(!url) {
+          console.log("No next url detected in the link header. Stopping pagination.");
+          break;
+        }
+
+        const response = await octokit.request(`GET ${url}`, {
+          per_page: 100,
+        });
+        linkHeader = response.headers.link;
+    
+        const parsedData = parseData(response.data)
+        data = [...data, ...parsedData];
+    
+        pagesRemaining = (linkHeader && linkHeader.includes(`rel=\"next\"`)) || false;
+      }
 
       setResults(response.data.items);
     } catch (err) {
@@ -123,7 +176,7 @@ const CodeSearch = () => {
 
       {results.length > 0 && (
         <div className="flex flex-col gap-2">
-          <h2>Results:</h2>
+          <h2>Results:{" "}{results.length}</h2>
           <ul className="border-gray-500 border-2 rounded-lg p-2">
             {results.map((item) => (
               <li
