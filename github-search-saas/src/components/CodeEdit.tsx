@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useGithubContext } from "../context/useGithubContext";
 import { githubGetCodeApi } from "../api/apiconfigs";
 import { generateContent } from "../geminiAPI/geminiAPI";
+import { Slider } from "@mui/material";
 
 const CodeEdit: React.FC = () => {
   const { username, repository, selectedItems, results } = useGithubContext();
@@ -10,6 +11,7 @@ const CodeEdit: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [output, setOutput] = useState<string>("");
   const [cache, setCache] = useState<Map<string, string>>(new Map());
+  const [modelTemperature, setModelTemperature] = useState<number>(0);
 
   useEffect(() => {
     setCache(new Map());
@@ -103,10 +105,24 @@ const CodeEdit: React.FC = () => {
 
   return (
     <div className="p-4 border-gray-500 border-2 rounded-lg flex-grow">
-      <div className="flex gap-4 items-center w-full">
-        <h2 className="text-2xl">Extra function</h2>
-      </div>
       <div className="flex flex-col gap-4 items-start">
+        <h2 className="text-2xl">Extra functions</h2>
+        <div className="flex gap-4 w-1/2">
+          <p className="text-lg text-nowrap">Model Temperature:</p>
+          <Slider
+            aria-label="Temperature"
+            size="small"
+            defaultValue={0}
+            min={0}
+            max={1}
+            step={0.1}
+            marks
+            valueLabelDisplay="auto"
+            onChange={(_, value) => {
+              setModelTemperature(value.valueOf() as number);
+            }}
+          />
+        </div>
         <h3 className="text-lg">Selected Details:</h3>
         <p>Username: {username || "None selected"}</p>
         <p>
@@ -134,7 +150,11 @@ const CodeEdit: React.FC = () => {
         <div className="w-full">
           <div className="flex gap-4 items-center mb-2">
             <p>Output</p>
-            <button onClick={downloadOutput} disabled={!output} className="!p-2">
+            <button
+              onClick={downloadOutput}
+              disabled={!output}
+              className="!p-2"
+            >
               Download
             </button>
           </div>

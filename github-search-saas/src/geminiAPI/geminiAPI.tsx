@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GenerationConfig, GoogleGenerativeAI } from "@google/generative-ai";
 import { GEMINI_API_KEY } from "../api/apiconfigs";
 
 const apiKey = GEMINI_API_KEY;
@@ -20,6 +20,20 @@ const generationConfig = {
 export async function generateContent(prompt: string) {
   const chatSession = model.startChat({
     generationConfig,
+  });
+
+  const result = await chatSession.sendMessage(prompt);
+
+  return result.response.text();
+}
+
+export async function generateContentWithConfig(prompt: string, config: GenerationConfig) {
+  if (config == null) {
+    throw new Error("Config is null. Please provide a valid config to api.");
+  }
+
+  const chatSession = model.startChat({
+    generationConfig: config,
   });
 
   const result = await chatSession.sendMessage(prompt);
