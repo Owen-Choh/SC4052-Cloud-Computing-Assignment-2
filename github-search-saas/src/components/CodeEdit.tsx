@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useGithubContext } from "../context/useGithubContext";
 import { githubGetCodeApi } from "../api/apiconfigs";
-import { generateContentWithConfig } from "../geminiAPI/geminiAPI";
+import {
+  generateContentWithConfig,
+  generateWithSystemInstructionAndConfig,
+} from "../geminiAPI/geminiAPI";
 import { Slider } from "@mui/material";
 
 const CodeEdit: React.FC = () => {
@@ -106,7 +109,7 @@ const CodeEdit: React.FC = () => {
     }
 
     if (finalPrompt == "") {
-      finalPrompt = `Generate a README for the repository ${repository} with the following code. The README should use markdown styling, do not wrap your entire output in markdown tags. For conciseness, you do not need to include the code directly in the README, you may chose to include the file path if required. Write the README in a way that is easy to understand for a beginner. Include a short description of what the repository contains, an overview of the code, architecture (if applicable) and how to set up and use it. Also include notes for anything the reader should look out for\n\n${repoFileContents}`;
+      finalPrompt = `These are the contents of the files in the repository\n\n${repoFileContents}`;
       cache.set("finalPrompt", finalPrompt);
     }
 
@@ -117,11 +120,16 @@ const CodeEdit: React.FC = () => {
       return;
     }
 
+    const systemInstruction = `Generate a README for the code repository ${repository}, only return the contents of the README.\nFormat the README using standard Markdown syntax for text styling. Avoid using code blocks unless displaying code.\nYou do not need to include the code directly in the README, you may chose to include the file path if required.\nWrite the README in a way that is easy to understand for a beginner.\nInclude a short description of what the repository contains, an overview of the code, architecture (if applicable) and how to set up and use it.\nAlso include brief notes that the reader should look out for when using the repository such as not commiting their env file.`;
     var generatedContent = "";
     if (!cache.has("generatedContent")) {
-      generatedContent = await generateContentWithConfig(finalPrompt, {
-        temperature: modelTemperature,
-      });
+      generatedContent = await generateWithSystemInstructionAndConfig(
+        systemInstruction,
+        finalPrompt,
+        {
+          temperature: modelTemperature,
+        }
+      );
       cache.set("generatedContent", generatedContent);
     } else {
       generatedContent = cache.get("generatedContent") || "";

@@ -37,6 +37,26 @@ export async function generateContentWithConfig(prompt: string, config: Generati
   });
 
   const result = await chatSession.sendMessage(prompt);
+  
+  return result.response.text();
+}
 
+export async function generateWithSystemInstructionAndConfig(systemInstruction: string, prompt: string, config: GenerationConfig) {
+  if (config == null) {
+    throw new Error("Config is null. Please provide a valid config to api.");
+  }
+
+  const chatSession = model.startChat({
+    generationConfig: config,
+    systemInstruction: {
+      role: "user",
+      parts: [
+        {text: systemInstruction},
+      ],
+    },
+  });
+
+  const result = await chatSession.sendMessage(prompt);
+  
   return result.response.text();
 }
