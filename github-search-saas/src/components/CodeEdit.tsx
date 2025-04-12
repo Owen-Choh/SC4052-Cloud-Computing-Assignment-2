@@ -13,7 +13,30 @@ const CodeEdit: React.FC = () => {
 
   useEffect(() => {
     setCache(new Map());
-  },[repository]);
+  }, [repository]);
+
+  const clearGenContent = () => {
+    cache.delete("generatedContent");
+    cache.delete("finalPrompt");
+    setOutput("");
+    console.log("Cache: ", cache);
+    console.log("Cache size: ", cache.size);
+  };
+  const clearRepoContent = () => {
+    cache.delete("repoFileContents");
+    setOutput("");
+    console.log("Cache: ", cache);
+  };
+
+  const downloadOutput = () => {
+    const blob = new Blob([output], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "output.md";
+    link.click();
+    URL.revokeObjectURL(url);
+  };
 
   const generateDocumentation = async () => {
     setLoading(true);
@@ -39,12 +62,8 @@ const CodeEdit: React.FC = () => {
           finalPrompt = cache.get("finalPrompt") || "";
         } else {
           repoFileContents = cache.get("repoFileContents") || "";
-
-          finalPrompt = `Generate documentation for the repository ${repository} with the following code:\n\n${repoFileContents}`;
-          cache.set("finalPrompt", finalPrompt);
         }
       } else {
-        var repoFileContents = "";
         for (const item of results) {
           const response = await githubGetCodeApi.get(
             `/${item.repository.full_name}/contents/${item.path}`
@@ -53,8 +72,9 @@ const CodeEdit: React.FC = () => {
           repoFileContents += item.path + "\n" + fileContent + "\n\n";
         }
         cache.set("repoFileContents", repoFileContents);
-
-        finalPrompt = `Generate documentation for the repository ${repository} with the following code:\n\n${repoFileContents}`;
+      }
+      if (finalPrompt == "" || cache.has("finalPrompt")) {
+        finalPrompt = `Generate documentation for the repository ${repository} with the following code. For conciseness, you do not need to include the code directly in the documentation, you may chose to include the file path if required. Write the documentation in a way that is easy to understand for a beginner. The documentation should use markdown styling, do not wrap your entire output in markdown tags. The documentation should be split into two sections: how-to guides and reference guides. Try to be detailed for the reference guide. Also include notes for anything the reader should look out for\n\n${repoFileContents}`;
         cache.set("finalPrompt", finalPrompt);
       }
 
@@ -69,6 +89,8 @@ const CodeEdit: React.FC = () => {
       if (!cache.has("generatedContent")) {
         generatedContent = await generateContent(finalPrompt);
         cache.set("generatedContent", generatedContent);
+      } else {
+        generatedContent = cache.get("generatedContent") || "";
       }
 
       setOutput(generatedContent);
@@ -89,9 +111,13 @@ const CodeEdit: React.FC = () => {
         <p>Username: {username || "None selected"}</p>
         <p>
           Repository: {repository || "None selected"}
-          <button onClick={generateDocumentation}>
-            Generate Documentation
-          </button>
+          <div className="flex gap-4">
+            <button onClick={generateDocumentation}>
+              Generate Documentation
+            </button>
+            <button onClick={clearGenContent}>Clear generated content</button>
+            <button onClick={clearRepoContent}>Clear repo content</button>
+          </div>
         </p>
         <p>
           Items:{" "}
@@ -106,7 +132,12 @@ const CodeEdit: React.FC = () => {
         {error && <p className="text-red-500">{error}</p>}
 
         <div className="w-full">
-          <p>Output</p>
+          <div className="flex gap-4 items-center mb-2">
+            <p>Output</p>
+            <button onClick={downloadOutput} disabled={!output} className="!p-2">
+              Download
+            </button>
+          </div>
           <textarea
             className="w-full h-64 border-gray-500 border-2 rounded-lg p-2"
             placeholder="Generated documentation will appear here..."
