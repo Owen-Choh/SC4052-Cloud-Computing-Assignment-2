@@ -96,7 +96,7 @@ const CodeEdit: React.FC = () => {
     }
     var { repoFileContents, finalPrompt, generatedContent } = checkCache();
 
-    if (repoFileContents == "" || cache.has("repoFileContents")) {
+    if (repoFileContents == "") {
       const { fileContents, errmsg } = await fetchFileContents(results);
       if (errmsg) {
         setError("Error fetching file content for: " + errmsg);
@@ -106,7 +106,7 @@ const CodeEdit: React.FC = () => {
     }
 
     if (finalPrompt == "") {
-      finalPrompt = `Generate a README for the repository ${repository} with the following code. For conciseness, you do not need to include the code directly in the README, you may chose to include the file path if required. Write the README in a way that is easy to understand for a beginner. The README should use markdown styling, do not wrap your entire output in markdown tags. Also include notes for anything the reader should look out for\n\n${repoFileContents}`;
+      finalPrompt = `Generate a README for the repository ${repository} with the following code. The README should use markdown styling, do not wrap your entire output in markdown tags. For conciseness, you do not need to include the code directly in the README, you may chose to include the file path if required. Write the README in a way that is easy to understand for a beginner. Include a short description of what the repository contains, an overview of the code, architecture (if applicable) and how to set up and use it. Also include notes for anything the reader should look out for\n\n${repoFileContents}`;
       cache.set("finalPrompt", finalPrompt);
     }
 
@@ -223,8 +223,24 @@ const CodeEdit: React.FC = () => {
         </div>
         <h3 className="text-lg">Selected Details:</h3>
         <p>Username: {username || "None selected"}</p>
-        <p>
-          Repository: {repository || "None selected"}
+        <div>
+          <p>Repository: {repository || "None selected"}</p>
+          {/* coloured indicator to show what lines are set in cache */}
+          <p className="text-green-500">
+            {cache.has("repoFileContents")
+              ? "repoFileContents Cache set"
+              : "repoFileContents Cache not set"}
+          </p>
+          <p className="text-green-500">
+            {cache.has("finalPrompt")
+              ? "finalPrompt Cache set"
+              : "finalPrompt Cache not set"}
+          </p>
+          <p className="text-green-500">
+            {cache.has("generatedContent")
+              ? "generatedContent Cache set"
+              : "generatedContent Cache not set"}
+          </p>
           <div className="flex gap-4">
             <button onClick={generateDocumentation}>
               Generate Documentation
@@ -233,7 +249,7 @@ const CodeEdit: React.FC = () => {
             <button onClick={clearGenContent}>Clear generated content</button>
             <button onClick={clearRepoContent}>Clear repo content</button>
           </div>
-        </p>
+        </div>
         <p>
           Items:{" "}
           {selectedItems && selectedItems.length > 0
