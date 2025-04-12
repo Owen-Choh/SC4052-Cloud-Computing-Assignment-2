@@ -182,15 +182,30 @@ const CodeEdit: React.FC = () => {
     setLoading(false);
   };
 
-  const submitPullRequest = async () => {
+  const submitPullRequest = async (
+    filePath: string,
+    commitMessage: string,
+    branchName: string,
+    pullRequestTitle: string,
+    pullRequestBody: string,
+    fileContent: string
+  ) => {
     console.log("Submitting pull request...");
+    if (fileContent == "") {
+      if (output == "") {
+        setError("No content to submit for pull request.");
+        return;
+      }
+      fileContent = output;
+    }
+
     try {
       // get default branch
       const defaultBranchResponse = await githubGetCodeApi.get(
         `/${username}/${repository}`
       );
       const defaultBranch = defaultBranchResponse.data.default_branch;
-      console.log("default branch: ", defaultBranch);
+      console.log("default branch of repo: ", defaultBranch);
 
       // get latest commit and tree
       const commitAndTreeResponse = await githubGetCodeApi.get(
@@ -198,7 +213,7 @@ const CodeEdit: React.FC = () => {
       );
       const oldCommit = commitAndTreeResponse.data.commit.sha;
       const oldTree = commitAndTreeResponse.data.commit.commit.tree.sha;
-      console.log("commit and tree: ", oldCommit, oldTree);
+      console.log("previous commit and tree: ", oldCommit, oldTree);
 
       // create new tree with new file
       const newTreeResponse = await githubGetCodeApi.post(
@@ -207,10 +222,10 @@ const CodeEdit: React.FC = () => {
           base_tree: oldTree,
           tree: [
             {
-              path: "README.md",
+              path: filePath,
               mode: "100644",
               type: "blob",
-              content: output,
+              content: fileContent,
             },
           ],
         }
@@ -221,7 +236,7 @@ const CodeEdit: React.FC = () => {
       const newCommitResponse = await githubGetCodeApi.post(
         `/${username}/${repository}/git/commits`,
         {
-          message: "Update README.md by github search saas",
+          message: commitMessage,
           tree: newTree,
           parents: [oldCommit],
         }
@@ -229,12 +244,11 @@ const CodeEdit: React.FC = () => {
       const newCommit = newCommitResponse.data.sha;
       console.log("new commit: ", newCommit);
 
-      // create new reference (branch) for the commit
-      const newBranchName = "update-readme-" + Date.now();
+      // create new reference (branch) for the commit;
       const newReferenceResponse = await githubGetCodeApi.post(
         `/${username}/${repository}/git/refs`,
         {
-          ref: "refs/heads/" + newBranchName,
+          ref: "refs/heads/" + branchName,
           sha: newCommit,
         }
       );
@@ -245,12 +259,13 @@ const CodeEdit: React.FC = () => {
       const pullRequestResponse = await githubGetCodeApi.post(
         `/${username}/${repository}/pulls`,
         {
-          title: "Update README.md by github search saas",
-          body: "Please pull these awesome changes in!",
-          head: newBranchName,
+          title: pullRequestTitle,
+          body: pullRequestBody,
+          head: branchName,
           base: defaultBranch,
         }
       );
+      console.log("pull request response: ", pullRequestResponse);
     } catch (error) {
       console.error("Error submitting pull request: ", error);
     }
@@ -332,7 +347,16 @@ const CodeEdit: React.FC = () => {
               Download
             </button>
             <button
-              onClick={() => submitPullRequest()}
+              onClick={() =>
+                submitPullRequest(
+                  "README.md",
+                  "Generated README from github search saas",
+                  "generated-readme",
+                  "Generated README",
+                  "This is a generated README from github search saas",
+                  output
+                )
+              }
               className="!bg-green-800 !p-2"
             >
               Submit Pull Request
