@@ -16,10 +16,6 @@ const CodeEdit: React.FC = () => {
   const [cache, setCache] = useState<Map<string, string>>(new Map());
   const [modelTemperature, setModelTemperature] = useState<number>(0);
 
-  useEffect(() => {
-    setCache(new Map());
-  }, [repository]);
-
   const clearGenContent = () => {
     cache.delete("generatedContent");
     cache.delete("finalPrompt");
@@ -136,6 +132,7 @@ const CodeEdit: React.FC = () => {
     }
 
     setOutput(generatedContent);
+    setLoading(false);
   };
 
   const generateDocumentation = async () => {
@@ -146,66 +143,41 @@ const CodeEdit: React.FC = () => {
       return;
     }
 
-    try {
-      var repoFileContents = "";
-      var finalPrompt = "";
-      if (cache.has("finalPrompt")) {
-        finalPrompt = cache.get("finalPrompt") || "";
-      } else if (cache.has("repoFileContents")) {
-        if (cache.has("finalPrompt")) {
-          finalPrompt = cache.get("finalPrompt") || "";
-        } else {
-          repoFileContents = cache.get("repoFileContents") || "";
-        }
-      } else {
-        var errmsg = "";
-        for (const item of results) {
-          try {
-            const response = await githubGetCodeApi.get(
-              `/${item.repository.full_name}/contents/${item.path}`
-            );
-            const fileContent = atob(response.data.content);
-            repoFileContents += item.path + "\n" + fileContent + "\n\n";
-          } catch (error) {
-            console.error(
-              `Error fetching file content for ${item.path}: ${error}`
-            );
-            errmsg += item.path + "; ";
-          }
-        }
-        if (errmsg) {
-          setError("Error fetching file content for: " + errmsg);
-        }
-        cache.set("repoFileContents", repoFileContents);
-      }
-      if (finalPrompt == "" || cache.has("finalPrompt")) {
-        finalPrompt = `Generate documentation for the repository ${repository} with the following code. For conciseness, you do not need to include the code directly in the documentation, you may chose to include the file path if required. Write the documentation in a way that is easy to understand for a beginner. The documentation should use markdown styling, do not wrap your entire output in markdown tags. The documentation should be split into two sections: how-to guides and reference guides. Try to be detailed for the reference guide. Also include notes for anything the reader should look out for\n\n${repoFileContents}`;
-        cache.set("finalPrompt", finalPrompt);
-      }
+    var { repoFileContents, finalPrompt, generatedContent } = checkCache();
 
-      console.log(finalPrompt);
-      if (!finalPrompt) {
-        setError("No content to generate documentation for.");
-        setLoading(false);
-        return;
+    if (repoFileContents == "") {
+      const { fileContents, errmsg } = await fetchFileContents(results);
+      if (errmsg) {
+        setError("Error fetching file content for: " + errmsg);
       }
-
-      var generatedContent = "";
-      if (!cache.has("generatedContent")) {
-        generatedContent = await generateContentWithConfig(finalPrompt, {
-          temperature: modelTemperature,
-        });
-        cache.set("generatedContent", generatedContent);
-      } else {
-        generatedContent = cache.get("generatedContent") || "";
-      }
-
-      setOutput(generatedContent);
-    } catch (err) {
-      setError("Error generating documentation: " + err.message);
-    } finally {
-      setLoading(false);
+      repoFileContents = fileContents;
+      cache.set("repoFileContents", repoFileContents);
     }
+
+    if (finalPrompt == "") {
+      finalPrompt = `Generate documentation for the repository ${repository} with the following code. For conciseness, you do not need to include the code directly in the documentation, you may chose to include the file path if required. Write the documentation in a way that is easy to understand for a beginner. The documentation should use markdown styling, do not wrap your entire output in markdown tags. The documentation should be split into two sections: how-to guides and reference guides. Try to be detailed for the reference guide. Also include notes for anything the reader should look out for\n\n${repoFileContents}`;
+      cache.set("finalPrompt", finalPrompt);
+    }
+
+    console.log(finalPrompt);
+    if (!finalPrompt) {
+      setError("No content to generate documentation for.");
+      setLoading(false);
+      return;
+    }
+
+    var generatedContent = "";
+    if (!cache.has("generatedContent")) {
+      generatedContent = await generateContentWithConfig(finalPrompt, {
+        temperature: modelTemperature,
+      });
+      cache.set("generatedContent", generatedContent);
+    } else {
+      generatedContent = cache.get("generatedContent") || "";
+    }
+
+    setOutput(generatedContent);
+    setLoading(false);
   };
 
   return (
