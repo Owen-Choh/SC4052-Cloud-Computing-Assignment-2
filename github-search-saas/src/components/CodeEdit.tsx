@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useGithubContext } from "../context/useGithubContext";
 import { githubGetCodeApi } from "../api/apiconfigs";
-import { generateContent } from "../geminiAPI/geminiAPI";
+import { generateContentWithConfig } from "../geminiAPI/geminiAPI";
 import { Slider } from "@mui/material";
 
 const CodeEdit: React.FC = () => {
@@ -66,12 +66,23 @@ const CodeEdit: React.FC = () => {
           repoFileContents = cache.get("repoFileContents") || "";
         }
       } else {
+        var errmsg = "";
         for (const item of results) {
-          const response = await githubGetCodeApi.get(
-            `/${item.repository.full_name}/contents/${item.path}`
-          );
-          const fileContent = atob(response.data.content);
-          repoFileContents += item.path + "\n" + fileContent + "\n\n";
+          try {
+            const response = await githubGetCodeApi.get(
+              `/${item.repository.full_name}/contents/${item.path}`
+            );
+            const fileContent = atob(response.data.content);
+            repoFileContents += item.path + "\n" + fileContent + "\n\n";
+          } catch (error) {
+            console.error(
+              `Error fetching file content for ${item.path}: ${error}`
+            );
+            errmsg += item.path + "; ";
+          }
+        }
+        if (errmsg) {
+          setError("Error fetching file content for: " + errmsg);
         }
         cache.set("repoFileContents", repoFileContents);
       }
@@ -89,7 +100,9 @@ const CodeEdit: React.FC = () => {
 
       var generatedContent = "";
       if (!cache.has("generatedContent")) {
-        generatedContent = await generateContent(finalPrompt);
+        generatedContent = await generateContentWithConfig(finalPrompt, {
+          temperature: modelTemperature,
+        });
         cache.set("generatedContent", generatedContent);
       } else {
         generatedContent = cache.get("generatedContent") || "";
@@ -122,6 +135,7 @@ const CodeEdit: React.FC = () => {
               setModelTemperature(value.valueOf() as number);
             }}
           />
+          <button onClick={() => console.log(results)}>click</button>
         </div>
         <h3 className="text-lg">Selected Details:</h3>
         <p>Username: {username || "None selected"}</p>
