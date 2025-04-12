@@ -212,50 +212,53 @@ const CodeEdit: React.FC = () => {
     <div className="p-4 border-gray-500 border-2 rounded-lg flex-grow">
       <div className="flex flex-col gap-4 items-start">
         <h2 className="text-2xl">Extra functions</h2>
-        <div className="flex gap-4 w-1/2">
-          <p className="text-lg text-nowrap">Model Temperature:</p>
-          <Slider
-            aria-label="Temperature"
-            size="small"
-            defaultValue={0}
-            min={0}
-            max={1}
-            step={0.1}
-            marks
-            valueLabelDisplay="auto"
-            onChange={(_, value) => {
-              setModelTemperature(value.valueOf() as number);
-            }}
-          />
-          <button onClick={() => console.log(results)}>click</button>
+        <div className="flex gap-4 w-full">
+          <p className="text-lg text-nowrap">
+            Model Temperature (how much variation in the output):
+          </p>
+          <div className="w-1/3">
+            <Slider
+              aria-label="Temperature"
+              size="small"
+              defaultValue={0}
+              min={0}
+              max={1}
+              step={0.1}
+              marks
+              valueLabelDisplay="auto"
+              onChange={(_, value) => {
+                setModelTemperature(value.valueOf() as number);
+              }}
+            />
+          </div>
+          <p>{modelTemperature}</p>
         </div>
         <h3 className="text-lg">Selected Details:</h3>
         <p>Username: {username || "None selected"}</p>
         <div>
-          <p>Repository: {repository || "None selected"}</p>
-          {/* coloured indicator to show what lines are set in cache */}
-          <p className="text-green-500">
-            {cache.has("repoFileContents")
-              ? "repoFileContents Cache set"
-              : "repoFileContents Cache not set"}
-          </p>
-          <p className="text-green-500">
-            {cache.has("finalPrompt")
-              ? "finalPrompt Cache set"
-              : "finalPrompt Cache not set"}
-          </p>
-          <p className="text-green-500">
-            {cache.has("generatedContent")
-              ? "generatedContent Cache set"
-              : "generatedContent Cache not set"}
-          </p>
+          <div className="flex gap-4 items-center mb-2">
+            <p>Repository: {repository || "None selected"}</p>
+            <p>Processing Cache (makes the buttons below faster):</p>
+            {cache.has("repoFileContents") ? (
+              <p className="text-green-500">Repository File Contents Cached</p>
+            ) : (
+              <p className="text-red-500 font-bold">
+                Repository File Contents not Cached
+              </p>
+            )}
+            {cache.has("generatedContent") ? (
+              <p className="text-green-500">AI Output Cached</p>
+            ) : (
+              <p className="text-red-500 font-bold">AI Output not Cached</p>
+            )}
+          </div>
           <div className="flex gap-4">
             <button onClick={generateDocumentation}>
               Generate Documentation
             </button>
             <button onClick={generateREADME}>Generate README</button>
-            <button onClick={clearGenContent}>Clear generated content</button>
-            <button onClick={clearRepoContent}>Clear repo content</button>
+            <button onClick={clearRepoContent}>Clear File Content cache</button>
+            <button onClick={clearGenContent}>Clear AI output cache</button>
           </div>
         </div>
         <p>
