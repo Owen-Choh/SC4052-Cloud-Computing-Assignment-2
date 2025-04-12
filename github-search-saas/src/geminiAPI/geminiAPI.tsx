@@ -1,12 +1,17 @@
 import { GEMINI_API_KEY } from "../api/apiconfigs";
-import { GoogleGenAI, GenerateContentConfig, Type, FunctionCallingConfigMode } from "@google/genai";
+import {
+  GoogleGenAI,
+  GenerateContentConfig,
+  Type,
+  FunctionCallingConfigMode,
+} from "@google/genai";
 
 const apiKey = GEMINI_API_KEY;
-const genAI = new GoogleGenAI({ apiKey: apiKey });
+export const genAI = new GoogleGenAI({ apiKey: apiKey });
 
 const defaultModel = "gemini-2.0-flash";
 
-const defaultGenerationConfig = {
+export const defaultGenerationConfig = {
   temperature: 1,
   topP: 0.95,
   topK: 40,
@@ -57,11 +62,54 @@ export async function generateWithSystemInstructionAndConfig(
   return result.text;
 }
 
+export async function generateWithTools(
+  systemInstruction: string,
+  historyArr: string[],
+  prompt: string,
+  config: GenerateContentConfig
+) {
+  var mappedHistory;
+  if (historyArr.length === 0) {
+    mappedHistory = undefined;
+  } else {
+    mappedHistory = historyArr.map((p) => ({
+      role: "user",
+      parts: [{ text: p }],
+    }));
+  }
+  console.log("mappedHistory", mappedHistory);
+  const chat = genAI.chats.create({
+    model: defaultModel,
+    history: mappedHistory,
+    config: {
+      ...config,
+      systemInstruction: {
+        role: "user",
+        parts: [{ text: systemInstruction }],
+      },
+      tools: [
+        {
+          functionDeclarations: [submitPullRequestFunctionDeclaration],
+        },
+      ],
+    },
+  });
+
+  const result = await chat.sendMessage({
+    message: prompt,
+  });
+
+  return result;
+}
+
 export async function generateWithSystemInstructionConfigAndTools(
   systemInstruction: string,
   prompt: string,
   config: GenerateContentConfig
 ) {
+  let promptCopy = prompt;
+  promptCopy = promptCopy.replace("```", "");
+
   const result = await genAI.models.generateContent({
     model: defaultModel,
     config: {
@@ -75,21 +123,14 @@ export async function generateWithSystemInstructionConfigAndTools(
           functionDeclarations: [submitPullRequestFunctionDeclaration],
         },
       ],
-      toolConfig: {
-        functionCallingConfig: {
-          // Force it to call a function
-          mode: FunctionCallingConfigMode.ANY,
-          allowedFunctionNames: ['submit_pull_request'],
-        }
-      },
     },
-    contents: prompt,
+    contents: promptCopy,
   });
 
   return result;
 }
 
-const submitPullRequestFunctionDeclaration = {
+export const submitPullRequestFunctionDeclaration = {
   name: "submit_pull_request",
   description: "Submit a pull request to the repository.",
   parameters: {

@@ -2,9 +2,11 @@ import React, { useState, useEffect } from "react";
 import { useGithubContext } from "../context/useGithubContext";
 import { githubGetCodeApi } from "../api/apiconfigs";
 import {
+  defaultGenerationConfig,
   generateContentWithConfig,
   generateWithSystemInstructionAndConfig,
   generateWithSystemInstructionConfigAndTools,
+  generateWithTools,
 } from "../geminiAPI/geminiAPI";
 import { Slider } from "@mui/material";
 
@@ -19,12 +21,15 @@ const CodeEdit: React.FC = () => {
   );
   const [modelTemperature, setModelTemperature] = useState<number>(0);
   const [autoPullRequest, setAutoPullRequest] = useState<boolean>(false);
+  const [repoFileContentArray, setRepoFileContentArray] = useState<string[]>(
+    []
+  );
 
   const clearGenContent = () => {
     cache.delete("generatedContent");
     cache.delete("finalPrompt");
     setOutput("");
-    console.log("Cache: ", cache);
+    // console.log("Cache: ", cache);
     console.log("Cache size: ", cache.size);
   };
   const clearRepoContent = () => {
@@ -71,8 +76,13 @@ const CodeEdit: React.FC = () => {
 
   const fetchFileContents = async (
     items: any[]
-  ): Promise<{ fileContents: string; errmsg: string }> => {
+  ): Promise<{
+    fileContents: string;
+    fileContentArray: string[];
+    errmsg: string;
+  }> => {
     var fileContents = "";
+    var fileContentArray: string[] = [];
     var errmsg = "";
     for (const item of results) {
       try {
@@ -81,13 +91,15 @@ const CodeEdit: React.FC = () => {
         );
         const fileContent = atob(response.data.content);
         fileContents += item.path + "\n" + fileContent + "\n\n";
+        fileContentArray.push(item.path + "\n" + fileContent);
       } catch (error) {
         console.error(`Error fetching file content for ${item.path}: ${error}`);
         errmsg += item.path + "; ";
       }
     }
 
-    return { fileContents, errmsg };
+    console.log("fileContentArray fetched: ", fileContentArray);
+    return { fileContents, fileContentArray, errmsg };
   };
 
   const generateREADME = async () => {
@@ -100,20 +112,24 @@ const CodeEdit: React.FC = () => {
     var { repoFileContents, finalPrompt, generatedContent } = checkCache();
 
     if (repoFileContents == "") {
-      const { fileContents, errmsg } = await fetchFileContents(results);
+      let { fileContents, fileContentArray, errmsg } = await fetchFileContents(
+        results
+      );
       if (errmsg) {
         setError("Error fetching file content for: " + errmsg);
       }
+      console.log("promptArray reset: ", fileContentArray);
       repoFileContents = fileContents;
+      await setRepoFileContentArray(fileContentArray);
       cache.set("repoFileContents", repoFileContents);
     }
 
+    console.log("repoFileContentArray after reset: ", repoFileContentArray);
     if (finalPrompt == "") {
       finalPrompt = `These are the contents of the files in the repository\n\n${repoFileContents}`;
       cache.set("finalPrompt", finalPrompt);
     }
 
-    console.log(finalPrompt);
     if (!finalPrompt) {
       setError("No content to generate README for.");
       setLoading(false);
@@ -123,22 +139,36 @@ const CodeEdit: React.FC = () => {
     if (generatedContent == "") {
       if (autoPullRequest) {
         console.log("Auto pull request enabled.");
-        const systemInstruction = `Submit a pull request for a suggested README file for this code repository ${repository}.\nFormat the README using standard Markdown syntax for text styling. Avoid using code blocks unless displaying code.\nYou do not need to include the code directly in the README, you may chose to include the file path if required.\nWrite the README in a way that is easy to understand for a beginner.\nInclude a short description of what the repository contains, an overview of the code, architecture (if applicable) and how to set up and use it.\nAlso include brief notes that the reader should look out for when using the repository such as not commiting their env file.`;
-        
+        const systemInstruction = `Submit a pull request for a suggested README file for this code repository ${repository}, do not need to ask user to review before submitting.\nYou do not need to include the code directly in the README, you may chose to include the file path if required.\nWrite the README in a way that is easy to understand for a beginner.\nInclude a short description of what the repository contains, an overview of the code, architecture (if applicable) and how to set up and use it.\nAlso include brief notes that the reader should look out for when using the repository such as not commiting their env file.`;
+        // const systemInstruction = `Submit a pull request for a suggested README file for this code repository ${repository}.\nYou do not need to include the code directly in the README.`;
+
+        console.log(
+          "repoFileContentArray before gen ai: ",
+          repoFileContentArray
+        );
+        // const end = repoFileContentArray.length > 25 ? 25 : repoFileContentArray.length;
+        // const temp = repoFileContentArray.slice(0, end);
+        // const genWithToolsResponse = await generateWithTools(
+        //   systemInstruction,
+        //   [],
+        //   "Submit a pull request for a README file. "+finalPrompt,
+        //   defaultGenerationConfig
+        // );
         const genWithToolsResponse =
           await generateWithSystemInstructionConfigAndTools(
             systemInstruction,
             finalPrompt,
-            {
-              temperature: modelTemperature,
-            }
+            defaultGenerationConfig
           );
+
         console.log("genWithToolsResponse: ", genWithToolsResponse);
+        console.log("genWithToolsResponse text: ", genWithToolsResponse.text);
+        var pullRequestResult = "Error submitting pull request";
         if (genWithToolsResponse.functionCalls) {
           console.log("function calls: ", genWithToolsResponse.functionCalls);
           const tool_call = genWithToolsResponse.functionCalls[0];
           if (tool_call.name === "submit_pull_request" && tool_call.args) {
-            const result = submitPullRequest(
+            pullRequestResult = await submitPullRequest(
               tool_call.args.filePath,
               tool_call.args.commitMessage,
               tool_call.args.branchName,
@@ -147,8 +177,101 @@ const CodeEdit: React.FC = () => {
               tool_call.args.fileContent
             );
           }
+        } // if start and end with ```
+        else if (genWithToolsResponse.text) {
+          if (
+            genWithToolsResponse.text.startsWith("```\nprint(default_api") &&
+            genWithToolsResponse.text.endsWith("```")
+          ) {
+            try {
+              const functionCallString = genWithToolsResponse.text;
+
+              // Regex to extract function name and arguments
+              const functionCallRegex = /submit_pull_request\((.)+\)/;
+              const functionCallLongRegex = /submit_pull_request\((.|[\n|\r])+\)(?=\)\n```$)/;
+              const match1 = functionCallString.match(functionCallRegex);
+              const match2 = functionCallString.match(functionCallLongRegex);
+              // match is whichever is longer
+              console.log("match1: ", match1);
+              console.log("match2: ", match2);
+              var match;
+              if (match1 && match2) {
+                let first = match1[0].length > match1[1].length ? match1[0] : match1[1];
+                let second = match2[0].length > match2[1].length ? match2[0] : match2[1];
+                match = first.length > second.length ? match1 : match2;
+              } else {
+                match = match1 || match2;
+              }
+
+              console.log("functionCallString: ", match);
+              if (match && match[1]) {
+                const argsString = match[0].length > match[1].length ? match[0] : match[1];
+
+                // Regex to extract key-value pairs
+                const keyValueRegex = /(\w+)=('([^']+)')/g;
+                let keyValueMatch;
+                const extractedArgs: { [key: string]: string } = {};
+
+                while (
+                  (keyValueMatch = keyValueRegex.exec(argsString)) !== null
+                ) {
+                  console.log("keyValueMatch: ", keyValueMatch);
+                  const key = keyValueMatch[1];
+                  const value = keyValueMatch[3] || keyValueMatch[4]; // handles both single and double quotes
+                  extractedArgs[key] = value;
+                }
+
+                console.log("Extracted args", extractedArgs);
+                const {
+                  filePath,
+                  commitMessage,
+                  branchName,
+                  pullRequestTitle,
+                  pullRequestBody,
+                  fileContent,
+                } = extractedArgs;
+
+                if (
+                  filePath &&
+                  commitMessage &&
+                  branchName &&
+                  pullRequestTitle &&
+                  pullRequestBody &&
+                  fileContent
+                ) {
+                  const fixedFileContent = fileContent.replace(/\\n/g, "\n");
+                  console.log(
+                    "Submitting pull request with extracted args:",
+                    extractedArgs
+                  );
+                  pullRequestResult = await submitPullRequest(
+                    filePath,
+                    commitMessage,
+                    branchName,
+                    pullRequestTitle,
+                    pullRequestBody,
+                    fixedFileContent
+                  );
+                  generatedContent = pullRequestResult;
+                } else {
+                  generatedContent =
+                    "Incomplete arguments extracted from the text response.";
+                }
+              } else {
+                generatedContent =
+                  "Could not parse the function call from the text response.";
+              }
+            } catch (error) {
+              console.error("Error parsing function call from text:", error);
+              generatedContent =
+                "Error parsing function call from the text response.";
+            }
+          } else {
+            generatedContent = genWithToolsResponse.text;
+          }
+        } else {
+          generatedContent = genWithToolsResponse.text || pullRequestResult;
         }
-        generatedContent = genWithToolsResponse.text || "";
       } else {
         const systemInstruction = `Generate a README for the code repository ${repository}, only return the contents of the README.\nFormat the README using standard Markdown syntax for text styling. Avoid using code blocks unless displaying code.\nYou do not need to include the code directly in the README, you may chose to include the file path if required.\nWrite the README in a way that is easy to understand for a beginner.\nInclude a short description of what the repository contains, an overview of the code, architecture (if applicable) and how to set up and use it.\nAlso include brief notes that the reader should look out for when using the repository such as not commiting their env file.`;
 
@@ -226,7 +349,7 @@ const CodeEdit: React.FC = () => {
     if (fileContent == "") {
       if (output == "") {
         setError("No content to submit for pull request.");
-        return;
+        return "No content to submit for pull request.";
       }
       fileContent = output;
     }
@@ -338,7 +461,9 @@ const CodeEdit: React.FC = () => {
             <p>Repository: {repository || "None selected"}</p>
             <p>Processing Cache (makes the buttons below faster):</p>
             {cache.has("repoFileContents") ? (
-              <p className="text-green-500">Repository File Contents Cached</p>
+              <p className="text-green-500">
+                Repository File Contents Cached {repoFileContentArray.length}
+              </p>
             ) : (
               <p className="text-red-500 font-bold">
                 Repository File Contents not Cached
