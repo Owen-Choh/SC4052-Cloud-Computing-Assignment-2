@@ -38,12 +38,16 @@ const CodeEdit: React.FC = () => {
     console.log("Cache: ", cache);
   };
 
-  const downloadOutput = () => {
-    const blob = new Blob([output], { type: "text/markdown" });
+  const downloadOutput = (
+    content: string,
+    filetype: string,
+    filename: string
+  ) => {
+    const blob = new Blob([content], { type: filetype });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "output.md";
+    link.download = filename;
     link.click();
     URL.revokeObjectURL(url);
   };
@@ -177,98 +181,6 @@ const CodeEdit: React.FC = () => {
               tool_call.args.fileContent
             );
           }
-        } // if start and end with ```
-        else if (genWithToolsResponse.text) {
-          if (
-            genWithToolsResponse.text.startsWith("```\nprint(default_api") &&
-            genWithToolsResponse.text.endsWith("```")
-          ) {
-            try {
-              const functionCallString = genWithToolsResponse.text;
-
-              // Regex to extract function name and arguments
-              const functionCallRegex = /submit_pull_request\((.)+\)/;
-              const functionCallLongRegex = /submit_pull_request\((.|[\n|\r])+\)(?=\)\n```$)/;
-              const match1 = functionCallString.match(functionCallRegex);
-              const match2 = functionCallString.match(functionCallLongRegex);
-              // match is whichever is longer
-              console.log("match1: ", match1);
-              console.log("match2: ", match2);
-              var match;
-              if (match1 && match2) {
-                let first = match1[0].length > match1[1].length ? match1[0] : match1[1];
-                let second = match2[0].length > match2[1].length ? match2[0] : match2[1];
-                match = first.length > second.length ? match1 : match2;
-              } else {
-                match = match1 || match2;
-              }
-
-              console.log("functionCallString: ", match);
-              if (match && match[1]) {
-                const argsString = match[0].length > match[1].length ? match[0] : match[1];
-
-                // Regex to extract key-value pairs
-                const keyValueRegex = /(\w+)=('([^']+)')/g;
-                let keyValueMatch;
-                const extractedArgs: { [key: string]: string } = {};
-
-                while (
-                  (keyValueMatch = keyValueRegex.exec(argsString)) !== null
-                ) {
-                  console.log("keyValueMatch: ", keyValueMatch);
-                  const key = keyValueMatch[1];
-                  const value = keyValueMatch[3] || keyValueMatch[4]; // handles both single and double quotes
-                  extractedArgs[key] = value;
-                }
-
-                console.log("Extracted args", extractedArgs);
-                const {
-                  filePath,
-                  commitMessage,
-                  branchName,
-                  pullRequestTitle,
-                  pullRequestBody,
-                  fileContent,
-                } = extractedArgs;
-
-                if (
-                  filePath &&
-                  commitMessage &&
-                  branchName &&
-                  pullRequestTitle &&
-                  pullRequestBody &&
-                  fileContent
-                ) {
-                  const fixedFileContent = fileContent.replace(/\\n/g, "\n");
-                  console.log(
-                    "Submitting pull request with extracted args:",
-                    extractedArgs
-                  );
-                  pullRequestResult = await submitPullRequest(
-                    filePath,
-                    commitMessage,
-                    branchName,
-                    pullRequestTitle,
-                    pullRequestBody,
-                    fixedFileContent
-                  );
-                  generatedContent = pullRequestResult;
-                } else {
-                  generatedContent =
-                    "Incomplete arguments extracted from the text response.";
-                }
-              } else {
-                generatedContent =
-                  "Could not parse the function call from the text response.";
-              }
-            } catch (error) {
-              console.error("Error parsing function call from text:", error);
-              generatedContent =
-                "Error parsing function call from the text response.";
-            }
-          } else {
-            generatedContent = genWithToolsResponse.text;
-          }
         } else {
           generatedContent = genWithToolsResponse.text || pullRequestResult;
         }
@@ -327,7 +239,7 @@ const CodeEdit: React.FC = () => {
     if (!cache.has("generatedContent")) {
       generatedContent = await generateContentWithConfig(finalPrompt, {
         temperature: modelTemperature,
-      });
+      }) || "Error generating content";
       cache.set("generatedContent", generatedContent);
     } else {
       generatedContent = cache.get("generatedContent") || "";
@@ -352,6 +264,44 @@ const CodeEdit: React.FC = () => {
         return "No content to submit for pull request.";
       }
       fileContent = output;
+    }
+    if (!filePath || filePath == "") {
+      console.log("Default file path used as no file path provided.");
+      setError(
+        "Default file path used as no file path provided for pull request."
+      );
+      filePath = "README.md";
+    }
+    if (!commitMessage || commitMessage == "") {
+      console.log("Default commit message used as no commit message provided.");
+      setError("Default commit message used as no commit message provided.");
+      commitMessage = "Generated README from github search saas";
+    }
+    if (!branchName || branchName == "") {
+      console.log("Default branch name used as no branch name provided.");
+      setError("Default branch name used as no branch name provided.");
+      branchName = "generated-readme";
+    } else {
+      branchName = branchName.replace(/[^a-zA-Z0-9-_]/g, "-");
+      console.log("branch name sanitized: ", branchName);
+    }
+    if (!pullRequestTitle || pullRequestTitle == "") {
+      console.log(
+        "Default pull request title used as no pull request title provided."
+      );
+      setError(
+        "Default pull request title used as no pull request title provided."
+      );
+      pullRequestTitle = "Generated README";
+    }
+    if (!pullRequestBody || pullRequestBody == "") {
+      console.log(
+        "Default pull request body used as no pull request body provided."
+      );
+      setError(
+        "Default pull request body used as no pull request body provided."
+      );
+      pullRequestBody = "This is a generated README from github search saas";
     }
 
     try {
@@ -508,11 +458,26 @@ const CodeEdit: React.FC = () => {
           <div className="flex gap-4 items-center mb-2">
             <p>Output</p>
             <button
-              onClick={downloadOutput}
+              onClick={() =>
+                downloadOutput(output, "text/markdown", "output.md")
+              }
               disabled={!output}
               className="!p-2"
             >
-              Download
+              Download Output
+            </button>
+            <button
+              onClick={() =>
+                downloadOutput(
+                  cache.get("repoFileContents") || "",
+                  "text/plain",
+                  "Repository_File_Contents.txt"
+                )
+              }
+              disabled={!cache.has("repoFileContents")}
+              className="!p-2"
+            >
+              Download File Contents
             </button>
             <button
               onClick={() =>
@@ -527,7 +492,7 @@ const CodeEdit: React.FC = () => {
               }
               className="!bg-green-800 !p-2"
             >
-              Submit Pull Request
+              Submit Pull Request with the output below
             </button>
           </div>
           <textarea

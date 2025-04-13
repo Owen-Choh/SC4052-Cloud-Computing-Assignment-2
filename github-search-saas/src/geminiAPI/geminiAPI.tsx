@@ -171,3 +171,111 @@ export const submitPullRequestFunctionDeclaration = {
     ],
   },
 };
+
+interface PullRequestArgs {
+  filePath: string;
+  commitMessage: string;
+  branchName: string;
+  pullRequestTitle: string;
+  pullRequestBody: string;
+  fixedFileContent: string;
+}
+// function to parse the function call from the gemini api response.
+// it kept returning a python print statement with the function call inside.
+export const parsePythonFunctionOutput = (
+  genWithToolsResponse: string
+): PullRequestArgs => {
+  if (
+    genWithToolsResponse.startsWith("```\nprint(default_api") &&
+    genWithToolsResponse.endsWith("```")
+  ) {
+    try {
+      const functionCallString = genWithToolsResponse;
+
+      // Regex to extract function name and arguments
+      const functionCallRegex = /submit_pull_request\((.)+\)/;
+      const functionCallLongRegex =
+        /submit_pull_request\((.|[\n|\r])+\)(?=\)\n```$)/;
+      const match1 = functionCallString.match(functionCallRegex);
+      const match2 = functionCallString.match(functionCallLongRegex);
+      // match is whichever is longer
+      console.log("match1: ", match1);
+      console.log("match2: ", match2);
+      var match;
+      if (match1 && match2) {
+        let first = match1[0].length > match1[1].length ? match1[0] : match1[1];
+        let second =
+          match2[0].length > match2[1].length ? match2[0] : match2[1];
+        match = first.length > second.length ? match1 : match2;
+      } else {
+        match = match1 || match2;
+      }
+
+      console.log("functionCallString: ", match);
+      if (match && match[1]) {
+        const argsString =
+          match[0].length > match[1].length ? match[0] : match[1];
+
+        // Regex to extract key-value pairs
+        const keyValueRegex = /(\w+)=('([^']+)')/g;
+        let keyValueMatch;
+        const extractedArgs: { [key: string]: string } = {};
+
+        while ((keyValueMatch = keyValueRegex.exec(argsString)) !== null) {
+          console.log("keyValueMatch: ", keyValueMatch);
+          const key = keyValueMatch[1];
+          const value = keyValueMatch[3] || keyValueMatch[4]; // handles both single and double quotes
+          extractedArgs[key] = value;
+        }
+
+        console.log("Extracted args", extractedArgs);
+        const {
+          filePath,
+          commitMessage,
+          branchName,
+          pullRequestTitle,
+          pullRequestBody,
+          fileContent,
+        } = extractedArgs;
+
+        if (
+          filePath &&
+          commitMessage &&
+          branchName &&
+          pullRequestTitle &&
+          pullRequestBody &&
+          fileContent
+        ) {
+          const fixedFileContent = fileContent.replace(/\\n/g, "\n");
+          console.log("return pull request extracted args:", extractedArgs);
+          return {
+            filePath,
+            commitMessage,
+            branchName,
+            pullRequestTitle,
+            pullRequestBody,
+            fixedFileContent,
+          };
+        } else {
+          console.log("Incomplete arguments extracted from the text response.");
+        }
+      } else {
+        console.log(
+          "Could not parse the function call from the text response."
+        );
+      }
+    } catch (error) {
+      console.error("Error parsing function call from text:", error);
+      console.log("Error parsing function call from the text response.");
+    }
+  }
+
+  return {
+    filePath: "",
+    commitMessage: "",
+    branchName: "",
+    pullRequestTitle: "",
+    pullRequestBody: "",
+    fixedFileContent: "",
+  };
+};
