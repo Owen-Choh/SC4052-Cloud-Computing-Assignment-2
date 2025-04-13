@@ -172,13 +172,13 @@ export const submitPullRequestFunctionDeclaration = {
   },
 };
 
-interface PullRequestArgs {
+export interface PullRequestArgs {
   filePath: string;
   commitMessage: string;
   branchName: string;
   pullRequestTitle: string;
   pullRequestBody: string;
-  fixedFileContent: string;
+  fileContent: string;
 }
 // function to parse the function call from the gemini api response.
 // it kept returning a python print statement with the function call inside.
@@ -254,7 +254,7 @@ export const parsePythonFunctionOutput = (
             branchName,
             pullRequestTitle,
             pullRequestBody,
-            fixedFileContent,
+            fileContent: fixedFileContent,
           };
         } else {
           console.log("Incomplete arguments extracted from the text response.");
@@ -276,6 +276,6 @@ export const parsePythonFunctionOutput = (
     branchName: "",
     pullRequestTitle: "",
     pullRequestBody: "",
-    fixedFileContent: "",
+    fileContent: "",
   };
 };

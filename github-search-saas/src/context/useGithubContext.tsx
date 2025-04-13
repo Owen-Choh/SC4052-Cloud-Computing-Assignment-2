@@ -21,6 +21,8 @@ interface GithubContextType {
   setDescriptions: (descriptions: Record<string, string>) => void;
   cache: Map<string, string>;
   setCache: (cache: Map<string, string>) => void;
+  repoFileContentArray: string[];
+  setRepoFileContentArray: (array: string[]) => void;
 }
 
 export const GithubContext = createContext<GithubContextType | undefined>(
@@ -50,6 +52,7 @@ export const GithubProvider: React.FC<{ children: ReactNode }> = ({
   const [results, setResults] = useState<any[]>([]);
   const [descriptions, setDescriptions] = useState<Record<string, string>>({});
   const [cache, setCache] = useState<Map<string, string>>(new Map());
+  const [repoFileContentArray, setRepoFileContentArray] = useState<string[]>([]);
 
   const setToken = (token: string) => {
     setTokenState(token);
@@ -79,6 +82,8 @@ export const GithubProvider: React.FC<{ children: ReactNode }> = ({
         setDescriptions,
         cache,
         setCache,
+        repoFileContentArray,
+        setRepoFileContentArray,
       }}
     >
       {children}

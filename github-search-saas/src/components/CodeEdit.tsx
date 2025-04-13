@@ -7,12 +7,21 @@ import {
   generateWithSystemInstructionAndConfig,
   generateWithSystemInstructionConfigAndTools,
   generateWithTools,
+  PullRequestArgs,
 } from "../geminiAPI/geminiAPI";
 import { Slider } from "@mui/material";
 
 const CodeEdit: React.FC = () => {
-  const { username, repository, selectedItems, results, cache, setCache } =
-    useGithubContext();
+  const {
+    username,
+    repository,
+    selectedItems,
+    results,
+    cache,
+    setCache,
+    repoFileContentArray,
+    setRepoFileContentArray,
+  } = useGithubContext();
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -21,19 +30,16 @@ const CodeEdit: React.FC = () => {
   );
   const [modelTemperature, setModelTemperature] = useState<number>(0);
   const [autoPullRequest, setAutoPullRequest] = useState<boolean>(false);
-  const [repoFileContentArray, setRepoFileContentArray] = useState<string[]>(
-    []
-  );
 
   const clearGenContent = () => {
     cache.delete("generatedContent");
     cache.delete("finalPrompt");
     setOutput("");
-    // console.log("Cache: ", cache);
     console.log("Cache size: ", cache.size);
   };
   const clearRepoContent = () => {
     cache.delete("repoFileContents");
+    setRepoFileContentArray([]);
     setOutput("");
     console.log("Cache: ", cache);
   };
@@ -143,31 +149,25 @@ const CodeEdit: React.FC = () => {
     if (generatedContent == "") {
       if (autoPullRequest) {
         console.log("Auto pull request enabled.");
-        const systemInstruction = `Submit a pull request for a suggested README file for this code repository ${repository}, do not need to ask user to review before submitting.\nYou do not need to include the code directly in the README, you may chose to include the file path if required.\nWrite the README in a way that is easy to understand for a beginner.\nInclude a short description of what the repository contains, an overview of the code, architecture (if applicable) and how to set up and use it.\nAlso include brief notes that the reader should look out for when using the repository such as not commiting their env file.`;
-        // const systemInstruction = `Submit a pull request for a suggested README file for this code repository ${repository}.\nYou do not need to include the code directly in the README.`;
+        const systemInstruction = `You are an API agent. Your response will be consumed directly by code and parsed as a JSON object. Do not format your JSON output in markdown fence blocks. Do not include any explanations. Do not use code fences like \`\`\`json. Just return a raw JSON object.\nSubmit a pull request for a suggested README file for my code repository ${repository}. You do not need to include the code directly in the README, you may chose to include the file path if required.\nWrite the README in a way that is easy to understand for a beginner.\nInclude a short description of what the repository contains, an overview of the code, architecture (if applicable) and how to set up and use it.\nAlso include brief notes that the reader should look out for when using the repository such as not commiting their env file.`;
 
         console.log(
           "repoFileContentArray before gen ai: ",
           repoFileContentArray
         );
-        // const end = repoFileContentArray.length > 25 ? 25 : repoFileContentArray.length;
-        // const temp = repoFileContentArray.slice(0, end);
-        // const genWithToolsResponse = await generateWithTools(
-        //   systemInstruction,
-        //   [],
-        //   "Submit a pull request for a README file. "+finalPrompt,
-        //   defaultGenerationConfig
-        // );
         const genWithToolsResponse =
           await generateWithSystemInstructionConfigAndTools(
             systemInstruction,
             finalPrompt,
-            defaultGenerationConfig
+            {
+              temperature: modelTemperature,
+            }
           );
 
         console.log("genWithToolsResponse: ", genWithToolsResponse);
         console.log("genWithToolsResponse text: ", genWithToolsResponse.text);
         var pullRequestResult = "Error submitting pull request";
+        // this is the built in function call from the api, usually dont work if context is too large
         if (genWithToolsResponse.functionCalls) {
           console.log("function calls: ", genWithToolsResponse.functionCalls);
           const tool_call = genWithToolsResponse.functionCalls[0];
@@ -182,9 +182,50 @@ const CodeEdit: React.FC = () => {
             );
           }
         } else {
-          generatedContent = genWithToolsResponse.text || pullRequestResult;
+          if (genWithToolsResponse.text && genWithToolsResponse.text != "") {
+            // try to parse the response as a json object (specified in the system instruction) and call the function
+            try {
+              const parsedResponse: PullRequestArgs = JSON.parse(
+                genWithToolsResponse.text
+              );
+              console.log("parsed response: ", parsedResponse);
+              pullRequestResult = await submitPullRequest(
+                parsedResponse.filePath,
+                parsedResponse.commitMessage,
+                parsedResponse.branchName,
+                parsedResponse.pullRequestTitle,
+                parsedResponse.pullRequestBody,
+                parsedResponse.fileContent
+              );
+            } catch (error) {
+              try {
+                // try again after cleaning since the ai keeps wrapping in these tags
+                const cleanJson = genWithToolsResponse.text
+                  .replace(/```json|```$/g, "")
+                  .trim();
+                const parsedResponse: PullRequestArgs = JSON.parse(cleanJson);
+                console.log("parsed response after cleaning: ", parsedResponse);
+                pullRequestResult = await submitPullRequest(
+                  parsedResponse.filePath,
+                  parsedResponse.commitMessage,
+                  parsedResponse.branchName,
+                  parsedResponse.pullRequestTitle,
+                  parsedResponse.pullRequestBody,
+                  parsedResponse.fileContent
+                );
+                console.log(pullRequestResult);
+                generatedContent =
+                  pullRequestResult + "\n" + genWithToolsResponse.text;
+              } catch (error) {
+                console.error("Error parsing response: ", error);
+              }
+            }
+          } else {
+            generatedContent = genWithToolsResponse.text || "";
+          }
         }
       } else {
+        // if auto pull request is not enabled, just generate the readme and put it on the UI
         const systemInstruction = `Generate a README for the code repository ${repository}, only return the contents of the README.\nFormat the README using standard Markdown syntax for text styling. Avoid using code blocks unless displaying code.\nYou do not need to include the code directly in the README, you may chose to include the file path if required.\nWrite the README in a way that is easy to understand for a beginner.\nInclude a short description of what the repository contains, an overview of the code, architecture (if applicable) and how to set up and use it.\nAlso include brief notes that the reader should look out for when using the repository such as not commiting their env file.`;
 
         generatedContent =
@@ -237,9 +278,10 @@ const CodeEdit: React.FC = () => {
 
     var generatedContent = "";
     if (!cache.has("generatedContent")) {
-      generatedContent = await generateContentWithConfig(finalPrompt, {
-        temperature: modelTemperature,
-      }) || "Error generating content";
+      generatedContent =
+        (await generateContentWithConfig(finalPrompt, {
+          temperature: modelTemperature,
+        })) || "Error generating content";
       cache.set("generatedContent", generatedContent);
     } else {
       generatedContent = cache.get("generatedContent") || "";
@@ -256,7 +298,7 @@ const CodeEdit: React.FC = () => {
     pullRequestTitle: string,
     pullRequestBody: string,
     fileContent: string
-  ) => {
+  ): Promise<string> => {
     console.log("Submitting pull request...");
     if (fileContent == "") {
       if (output == "") {
