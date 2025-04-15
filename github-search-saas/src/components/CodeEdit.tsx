@@ -62,6 +62,13 @@ const CodeEdit: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
+  const stripCodeFences = (content: string): string => {
+    return content
+      .replace(/^```[\w]*\s*/i, "") // Remove opening fence and optional language tag
+      .replace(/```$/, "") // Remove closing fence
+      .trim();
+  };
+
   const validateInitialState = (): boolean => {
     if (!repository) {
       setError("No repository selected. Please select a repo first.");
@@ -193,12 +200,16 @@ const CodeEdit: React.FC = () => {
           const tool_call = genWithToolsResponse.functionCalls[0];
           if (tool_call.name === "submit_pull_request" && tool_call.args) {
             pullRequestResult = await submitPullRequest(
-              tool_call.args.filePath,
-              tool_call.args.commitMessage,
-              tool_call.args.branchName,
-              tool_call.args.pullRequestTitle,
-              tool_call.args.pullRequestBody,
-              tool_call.args.fileContent
+              [
+                {
+                  filePath: tool_call.args.filePath as string,
+                  fileContent: tool_call.args.fileContent as string,
+                },
+              ],
+              tool_call.args.commitMessage as string,
+              tool_call.args.branchName as string,
+              tool_call.args.pullRequestTitle as string,
+              tool_call.args.pullRequestBody as string
             );
           }
         } else {
@@ -210,12 +221,16 @@ const CodeEdit: React.FC = () => {
               );
               console.log("parsed response: ", parsedResponse);
               pullRequestResult = await submitPullRequest(
-                parsedResponse.filePath,
+                [
+                  {
+                    filePath: parsedResponse.filePath,
+                    fileContent: parsedResponse.fileContent,
+                  },
+                ],
                 parsedResponse.commitMessage,
                 parsedResponse.branchName,
                 parsedResponse.pullRequestTitle,
-                parsedResponse.pullRequestBody,
-                parsedResponse.fileContent
+                parsedResponse.pullRequestBody
               );
               generatedContent =
                 pullRequestResult + "\n" + genWithToolsResponse.text;
@@ -228,12 +243,16 @@ const CodeEdit: React.FC = () => {
                 const parsedResponse: PullRequestArgs = JSON.parse(cleanJson);
                 console.log("parsed response after cleaning: ", parsedResponse);
                 pullRequestResult = await submitPullRequest(
-                  parsedResponse.filePath,
+                  [
+                    {
+                      filePath: parsedResponse.filePath,
+                      fileContent: parsedResponse.fileContent,
+                    },
+                  ],
                   parsedResponse.commitMessage,
                   parsedResponse.branchName,
                   parsedResponse.pullRequestTitle,
-                  parsedResponse.pullRequestBody,
-                  parsedResponse.fileContent
+                  parsedResponse.pullRequestBody
                 );
                 console.log(pullRequestResult);
                 generatedContent =
@@ -323,10 +342,11 @@ const CodeEdit: React.FC = () => {
     setLoadingMessage("");
   };
 
-  const generateComments = async () => {
+  const generateCommentsAndSendPullRequest = async (selectedFiles: any[]) => {
     setLoading(true);
     setLoadingMessage("Validating initial state...");
     setError(null);
+
     if (!validateInitialState()) {
       setLoading(false);
       setLoadingMessage("");
@@ -357,25 +377,87 @@ const CodeEdit: React.FC = () => {
       cache.set("finalPrompt", finalPrompt);
     }
 
-    if (generatedContent == "") {
-      setLoadingMessage("Validating documentation...");
-      const systemInstruction = `Help me make sure that the code ${selectedFilePath} is well documented. Give me the full updated file only if comments in the file needs changes.`;
-
-      generatedContent =
-        (await generateWithSystemInstructionAndConfig(
-          geminiApiKey,
-          systemInstruction,
-          finalPrompt,
-          {
-            temperature: modelTemperature,
-          }
-        )) || "Error generating content";
-
-      console.log("generatedContent: ", generatedContent);
-      cache.set("generatedContent", generatedContent);
-      setOutput(generatedContent);
+    if (generatedContent != "") {
+      setLoading(false);
+      setLoadingMessage("");
     }
 
+    setLoadingMessage("Validating input files...");
+    if (
+      !selectedFiles ||
+      !Array.isArray(selectedFiles) ||
+      selectedFiles.length == 0
+    ) {
+      setError("No files selected. Please select a file first.");
+      setLoading(false);
+      setLoadingMessage("");
+      return;
+    }
+
+    setLoadingMessage("Processing selected files...");
+    const outputs: { filePath: string; fileContent: string }[] = []; // Array to store outputs for each file
+
+    for (const file of selectedFiles) {
+      setLoadingMessage(`Processing ${file.path}...`);
+      try {
+        const systemInstruction = `Help me make sure that the code ${file.path} is well documented. Give me the full updated file only if comments in the file need changes. Return "none" if no changes are needed. Your output will be parsed by code and will not be seen by users. Do not wrap your output in markdown tags.`;
+
+        const generatedContent =
+          (await generateWithSystemInstructionAndConfig(
+            geminiApiKey,
+            systemInstruction,
+            finalPrompt,
+            {
+              temperature: modelTemperature,
+            }
+          )) || "Error generating content";
+
+        if (
+          generatedContent !== "none" &&
+          generatedContent !== "" &&
+          generatedContent !== "Error generating content"
+        ) {
+          const cleanedContent = stripCodeFences(generatedContent);
+          if (cleanedContent !== "") {
+            outputs.push({
+              filePath: file.path,
+              fileContent: cleanedContent,
+            });
+          } else {
+            console.log(
+              `No changes needed after removing code fences for ${file.path}`
+            );
+          }
+        } else {
+          console.log(`No generated content for ${file.path}`);
+        }
+      } catch (error) {
+        console.error(`Error processing file ${file.path}:`, error);
+        outputs.push({
+          filePath: file.path,
+          fileContent: "Error generating content",
+        });
+      }
+    }
+
+    if (outputs.length > 0) {
+      const pullRequestResult = submitPullRequest(
+        outputs,
+        "Generated comments",
+        "generated-comments",
+        "Generated comments",
+        "These are the generated comments from github search saas"
+      );
+
+      const outputArray: string = JSON.stringify(outputs, null, 2);
+      const finalOutput: string = `Pull request result: ${pullRequestResult}\n\nGenerated comments:\n${outputArray}`;
+      cache.set("generatedContent", finalOutput);
+      setOutput(finalOutput);
+    } else {
+      setOutput("No output generated.");
+    }
+
+    console.log("Generated outputs:", outputs);
     setLoading(false);
     setLoadingMessage("");
   };
@@ -495,42 +577,40 @@ const CodeEdit: React.FC = () => {
   };
 
   const submitPullRequest = async (
-    filePath: string,
+    files: { filePath: string; fileContent: string }[],
     commitMessage: string,
     branchName: string,
     pullRequestTitle: string,
-    pullRequestBody: string,
-    fileContent: string
+    pullRequestBody: string
   ): Promise<string> => {
     console.log("Submitting pull request...");
-    if (fileContent == "") {
-      if (output == "") {
+    if (!files || files.length === 0) {
+      if (output === "") {
         setError("No content to submit for pull request.");
         return "No content to submit for pull request.";
       }
-      fileContent = output;
+      files = [{ filePath: "README.md", fileContent: output }];
     }
-    if (!filePath || filePath == "") {
-      console.log("Default file path used as no file path provided.");
-      setError(
-        "Default file path used as no file path provided for pull request."
-      );
-      filePath = "README.md";
+    if (files.some((file) => !file.filePath || !file.fileContent)) {
+      console.log("File paths or file contents are empty.");
+      setError("File paths or file contents are empty.");
+      return "File paths or file contents are empty.";
     }
-    if (!commitMessage || commitMessage == "") {
+    if (commitMessage === "") {
       console.log("Default commit message used as no commit message provided.");
       setError("Default commit message used as no commit message provided.");
       commitMessage = "Generated README from github search saas";
     }
-    if (!branchName || branchName == "") {
-      console.log("Default branch name used as no branch name provided.");
-      setError("Default branch name used as no branch name provided.");
+    branchName = branchName.replace(/[^a-zA-Z0-9-_]/g, "-");
+    console.log("branch name sanitized: ", branchName);
+    if (!branchName || branchName === "") {
+      console.log(
+        "Default branch name used as no branch name after sanitizing."
+      );
+      setError("Default branch name used as no branch name after sanitizing.");
       branchName = "generated-readme";
-    } else {
-      branchName = branchName.replace(/[^a-zA-Z0-9-_]/g, "-");
-      console.log("branch name sanitized: ", branchName);
     }
-    if (!pullRequestTitle || pullRequestTitle == "") {
+    if (!pullRequestTitle || pullRequestTitle === "") {
       console.log(
         "Default pull request title used as no pull request title provided."
       );
@@ -539,7 +619,7 @@ const CodeEdit: React.FC = () => {
       );
       pullRequestTitle = "Generated README";
     }
-    if (!pullRequestBody || pullRequestBody == "") {
+    if (!pullRequestBody || pullRequestBody === "") {
       console.log(
         "Default pull request body used as no pull request body provided."
       );
@@ -575,47 +655,51 @@ const CodeEdit: React.FC = () => {
       const oldTree = commitAndTreeResponse.data.commit.commit.tree.sha;
       console.log("previous commit and tree: ", oldCommit, oldTree);
 
-      // create new tree with new file
-      const newTreeResponse = await githubGetCodeApi.post(
-        `/${username}/${repository}/git/trees`,
-        {
-          base_tree: oldTree,
-          tree: [
-            {
-              path: filePath,
-              mode: "100644",
-              type: "blob",
-              content: fileContent,
-            },
-          ],
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      const newTree = newTreeResponse.data.sha;
+      let newTree = oldTree;
+      let newCommit = oldCommit;
 
-      // create new commit object
+      // loop through files to create commits
+      for (const { filePath, fileContent } of files) {
+        // Create new tree with new file
+        const newTreeResponse = await githubGetCodeApi.post(
+          `/${username}/${repository}/git/trees`,
+          {
+            base_tree: newTree,
+            tree: [
+              {
+                path: filePath,
+                mode: "100644",
+                type: "blob",
+                content: fileContent,
+              },
+            ],
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        newTree = newTreeResponse.data.sha;
+      }
+      // Create new commit object
       const newCommitResponse = await githubGetCodeApi.post(
         `/${username}/${repository}/git/commits`,
         {
           message: commitMessage,
           tree: newTree,
-          parents: [oldCommit],
+          parents: [newCommit],
         },
-
         {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         }
       );
-      const newCommit = newCommitResponse.data.sha;
+      newCommit = newCommitResponse.data.sha;
       console.log("new commit: ", newCommit);
 
-      // create new reference (branch) for the commit;
+      // Create new reference (branch) for the commit
       const newBranchName = branchName + Date.now();
       const newReferenceResponse = await githubGetCodeApi.post(
         `/${username}/${repository}/git/refs`,
@@ -631,7 +715,6 @@ const CodeEdit: React.FC = () => {
       );
       console.log("new reference: ", newReferenceResponse);
 
-      //  '{"title":"Amazing new feature","body":"Please pull these awesome changes in!","head":"octocat:new-feature","base":"master"}'
       // create pull request
       const pullRequestResponse = await githubGetCodeApi.post(
         `/${username}/${repository}/pulls`,
@@ -712,7 +795,12 @@ const CodeEdit: React.FC = () => {
                   />
                 </div>
 
-                <button onClick={generateComments} className="w-fit">
+                <button
+                  onClick={() =>
+                    generateCommentsAndSendPullRequest(selectedItems)
+                  }
+                  className="w-fit"
+                >
                   Generate Comments
                 </button>
               </div>
@@ -809,12 +897,11 @@ const CodeEdit: React.FC = () => {
                   filepath = selectedFilePath.replace(/[^a-zA-Z0-9-_/.]/g, "-");
                 }
                 submitPullRequest(
-                  filepath,
-                  "Generated output from github search saas",
+                  [{ filePath: filepath, fileContent: output }],
+                  `Generated ${filepath} from github search saas`,
                   "generated-output",
                   "Generated output",
-                  "This is the generated output from github search saas",
-                  output
+                  `This is the generated ${filepath} from github search saas`
                 );
               }}
               className="!bg-green-800 !p-2"

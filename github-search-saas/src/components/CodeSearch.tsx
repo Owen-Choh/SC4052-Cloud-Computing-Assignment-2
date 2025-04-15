@@ -25,6 +25,7 @@ const CodeSearch = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [loadingDescriptions, setLoadingDescriptions] = useState({});
+  const [selectAll, setSelectAll] = useState(false);
 
   type SearchCodeResult = {
     total_count: number;
@@ -153,6 +154,15 @@ const CodeSearch = () => {
     }
   };
 
+  const handleSelectAll = () => {
+    setSelectAll((prev) => !prev);
+    if (!selectAll) {
+      setSelectedItems(results);
+    } else {
+      setSelectedItems([]);
+    }
+  };
+
   return (
     <div className="p-4 border-gray-500 border-2 rounded-lg flex-grow overflow-x-hidden overflow-y-auto">
       <div className="flex gap-4 items-center">
@@ -180,7 +190,12 @@ const CodeSearch = () => {
 
       {results.length > 0 && (
         <div className="flex flex-col gap-2">
-          <h2>Results: {results.length}</h2>
+          <div className="flex justify-between items-center">
+            <h2>Results: {results.length}</h2>
+            <button onClick={handleSelectAll}>
+              {selectAll ? "Deselect All" : "Select All"}
+            </button>
+          </div>
           <ul className="border-gray-500 border-2 rounded-lg p-2">
             {results.map((item) => (
               <li

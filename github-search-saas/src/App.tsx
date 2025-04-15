@@ -8,9 +8,9 @@ function App() {
   const [tab, setTab] = useState('GeneralInfo');
   console.log('tab', tab);
   return (
-    <div className="App flex h-screen w-screen">
+    <div className="App flex min-h-screen w-screen">
       {/* side bar */}
-      <div className="flex flex-col gap-4 items-center bg-gray-800 p-4 max-w-1/6 h-full">
+      <div className="flex flex-col gap-4 items-center bg-gray-800 p-4 max-w-1/6 min-h-full">
         <h2 className="text-lg text-white">Tabs</h2>
         <p
           className={`text-lg text-gray-400 hover:text-white ${tab === 'GeneralInfo' ? 'text-white' : ''}`}
