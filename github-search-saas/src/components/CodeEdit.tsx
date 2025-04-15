@@ -18,6 +18,7 @@ const CodeEdit: React.FC = () => {
     token,
     selectedItems,
     results,
+    resultsFromRepo,
     cache,
     setCache,
     repoFileContentArray,
@@ -34,7 +35,10 @@ const CodeEdit: React.FC = () => {
   const [modelTemperature, setModelTemperature] = useState<number>(0);
   const [autoPullRequest, setAutoPullRequest] = useState<boolean>(false);
   const [selectedFilePath, setSelectedFilePath] = useState<string>("");
-
+  const [minimizedCache, setMinimizedCache] = useState<boolean>(false);
+  const toggleMinimizedCache = () => {
+    setMinimizedCache(!minimizedCache);
+  };
   const clearGenContent = () => {
     cache.delete("generatedContent");
     cache.delete("finalPrompt");
@@ -388,7 +392,7 @@ const CodeEdit: React.FC = () => {
       !Array.isArray(selectedFiles) ||
       selectedFiles.length == 0
     ) {
-      setError("No files selected. Please select a file first.");
+      setError("No files selected. Please select some files first.");
       setLoading(false);
       setLoadingMessage("");
       return;
@@ -742,13 +746,12 @@ const CodeEdit: React.FC = () => {
     <div className="p-4 border-gray-500 border-2 rounded-lg flex-grow">
       <div className="flex flex-col gap-4 items-start">
         <h2 className="text-2xl">Extra functions</h2>
-        <button
-          onClick={() => {
-            console.log(cache.get("generatedContent"));
-          }}
-        >
-          click
-        </button>
+        {resultsFromRepo != repository && (
+          <p className="text-xl font-bold text-red-500">
+            Files loaded from search may not be up to date, please refresh the
+            search in order to use this feature
+          </p>
+        )}
         <div className="flex gap-4 w-full">
           <p className="text-lg text-nowrap">
             Model Temperature (how much creativity/variation in the output):
@@ -779,12 +782,18 @@ const CodeEdit: React.FC = () => {
                   Repository: {repository || "None selected"}
                 </p>
 
-                <button onClick={generateDocumentation} className="w-fit">
+                <button
+                  onClick={generateDocumentation}
+                  className="w-fit !bg-blue-900"
+                >
                   Generate Documentation
                 </button>
 
                 <div className="flex gap-4 items-center">
-                  <button onClick={generateREADME} className="w-fit">
+                  <button
+                    onClick={generateREADME}
+                    className="w-fit !bg-gray-600"
+                  >
                     Generate README
                   </button>
                   <p>Auto Submit Pull Request?</p>
@@ -799,39 +808,58 @@ const CodeEdit: React.FC = () => {
                   onClick={() =>
                     generateCommentsAndSendPullRequest(selectedItems)
                   }
-                  className="w-fit"
+                  className="w-fit !bg-green-900"
                 >
-                  Generate Comments
+                  Generate Comments for all selected files and submit PR
                 </button>
               </div>
             </div>
           </div>
-          <div className="ml-auto flex flex-col gap-2">
-            <h3 className="text-lg">
-              Processing Cache (makes generation faster):
+          <div className="ml-auto flex flex-col gap-2 w-1/3">
+            <h3 className="text-lg gap-4 flex items-center">
+              Processing Cache (makes generation faster){" "}
+              <button
+                onClick={toggleMinimizedCache}
+                className="!p-1 !bg-blue-900"
+              >
+                {minimizedCache ? "Show" : "Hide"}
+              </button>
             </h3>
-            {cache.has("repoFileContents") ? (
-              <div className="flex items-center gap-4">
-                <p className="text-green-500">
-                  Repository File Contents Cached {repoFileContentArray.length}
+            <div
+              className={`flex flex-col gap-2 ${
+                minimizedCache ? "hidden" : ""
+              }`}
+            >
+              {cache.has("repoFileContents") ? (
+                <div className="flex items-center gap-4">
+                  <p className="text-green-500 max-w-1/2">
+                    Repository File Contents Cached{" "}
+                    {repoFileContentArray.length} from {resultsFromRepo}
+                  </p>
+                  <button onClick={clearRepoContent}>
+                    Clear File Content cache
+                  </button>
+                </div>
+              ) : (
+                <p className="text-red-500 font-bold">
+                  Repository File Contents not Cached
                 </p>
-                <button onClick={clearRepoContent}>
-                  Clear File Content cache
-                </button>
-              </div>
-            ) : (
-              <p className="text-red-500 font-bold">
-                Repository File Contents not Cached
-              </p>
-            )}
-            {cache.has("generatedContent") ? (
-              <div className="flex  items-center gap-4">
-                <p className="text-green-500">AI Output Cached</p>
-                <button onClick={clearGenContent}>Clear AI output cache</button>
-              </div>
-            ) : (
-              <p className="text-red-500 font-bold">AI Output not Cached</p>
-            )}
+              )}
+              {cache.has("generatedContent") ? (
+                <div className="flex  items-center gap-4">
+                  <p className="text-green-500">
+                    AI Output Cached
+                    <br />
+                    Clear this to regenerate output
+                  </p>
+                  <button onClick={clearGenContent}>
+                    Clear AI output cache
+                  </button>
+                </div>
+              ) : (
+                <p className="text-red-500 font-bold">AI Output not Cached</p>
+              )}
+            </div>
           </div>
         </div>
         <div className="flex gap-2 text-lg">
@@ -843,15 +871,15 @@ const CodeEdit: React.FC = () => {
                   <p>{item.path}</p>
                   <button
                     onClick={() => checkComments(item.path)}
-                    className="!text-base"
+                    className="!text-base !bg-green-700"
                   >
-                    Validate Comments in the file
+                    Validate Comments
                   </button>
                   <button
                     onClick={() => wellDocumented(item.path)}
-                    className="!text-base"
+                    className="!text-base !bg-green-900"
                   >
-                    Well Documented File
+                    "Well Documented"
                   </button>
                 </li>
               ))}
@@ -888,7 +916,7 @@ const CodeEdit: React.FC = () => {
               disabled={!cache.has("repoFileContents")}
               className="!p-2"
             >
-              Download File Contents
+              Download Cached File Contents
             </button>
             <button
               onClick={() => {

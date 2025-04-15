@@ -1,6 +1,11 @@
 import React, { useState } from "react";
 import { useGithubContext } from "../context/useGithubContext";
-import { githubSearchRepoApi, setOctokit } from "../api/apiconfigs";
+import {
+  GEMINI_API_KEY,
+  GITHUB_TOKEN,
+  githubSearchRepoApi,
+  setOctokit,
+} from "../api/apiconfigs";
 
 const GeneralInfo: React.FC = () => {
   const {
@@ -66,6 +71,13 @@ const GeneralInfo: React.FC = () => {
               value={geminiApiKey}
               onChange={(e) => setGeminiApiKey(e.target.value)}
             />
+            {GEMINI_API_KEY && (
+              <span className="text-red-500">
+                {" "}
+                (Gemini API Key detected in env, please ensure that this is
+                local development only)
+              </span>
+            )}
           </label>
           <p>
             This is used to generate code descriptions and summaries. You can
@@ -83,6 +95,13 @@ const GeneralInfo: React.FC = () => {
                 setOctokit(e.target.value);
               }}
             />
+            {GITHUB_TOKEN && (
+              <span className="text-red-500">
+                {" "}
+                (Github token detected in env, please ensure that this is local
+                development only)
+              </span>
+            )}
           </label>
           <p>
             This is used to list the repos that you own, search and retrieve

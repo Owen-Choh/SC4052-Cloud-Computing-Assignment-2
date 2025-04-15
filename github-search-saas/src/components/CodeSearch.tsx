@@ -17,6 +17,8 @@ const CodeSearch = () => {
     setFileTypes,
     results,
     setResults,
+    resultsFromRepo,
+    setResultsFromRepo,
     descriptions,
     setDescriptions,
     geminiApiKey,
@@ -25,7 +27,9 @@ const CodeSearch = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [loadingDescriptions, setLoadingDescriptions] = useState({});
-  const [selectAll, setSelectAll] = useState(selectedItems.length >= results.length);
+  const [selectAll, setSelectAll] = useState(
+    selectedItems.length >= results.length
+  );
 
   type SearchCodeResult = {
     total_count: number;
@@ -50,6 +54,7 @@ const CodeSearch = () => {
   }
 
   const handleSearch = async () => {
+    setResultsFromRepo("");
     setResults([]);
     setSelectedItems([]); // Initialize as an empty array for multiple selections
     // better to keep the descriptions when a new search is made since api calls are expensive
@@ -111,6 +116,7 @@ const CodeSearch = () => {
           (linkHeader && linkHeader.includes(`rel=\"next\"`)) || false;
       }
 
+      setResultsFromRepo(repository);
       setResults(data);
     } catch (err) {
       setError(err.message);
@@ -184,18 +190,32 @@ const CodeSearch = () => {
           onChange={(e) => setFileTypes(e.target.value)}
           placeholder="Filter by comma seperated file types..."
         />
+        {results.length > 0 && (
+          <h2>
+            {results.length} Results from {resultsFromRepo}
+          </h2>
+        )}
       </div>
 
       {error && <p style={{ color: "red" }}>Error: {error}</p>}
 
       {results.length > 0 && (
-        <div className="flex flex-col gap-2">
-          <div className="flex justify-between items-center">
-            <h2>Results: {results.length}</h2>
-            <button onClick={handleSelectAll}>
-              {selectAll ? "Deselect All" : "Select All"}
-            </button>
-          </div>
+        <div className="flex flex-col gap-2 mt-2">
+          <h2 className="text-xl">Search Results</h2>
+          <p>
+            All Search Results will <span className="font-bold">always</span> be
+            used as context for the AI features in the app
+          </p>
+          <p>
+            <span className="font-bold">Only specific features </span> will take
+            into account any <span className="font-bold">selected</span> files
+          </p>
+          <button
+            onClick={handleSelectAll}
+            className="w-fit !p-2 !bg-green-700"
+          >
+            {selectAll ? "Deselect All" : "Select All"}
+          </button>
           <ul className="border-gray-500 border-2 rounded-lg p-2">
             {results.map((item) => (
               <li

@@ -1,12 +1,8 @@
 import { GEMINI_API_KEY } from "../api/apiconfigs";
-import {
-  GoogleGenAI,
-  GenerateContentConfig,
-  Type,
-} from "@google/genai";
+import { GoogleGenAI, GenerateContentConfig, Type } from "@google/genai";
 
 const apiKey = GEMINI_API_KEY;
-export const genAI = (geminiApiKey:string) => {
+export const genAI = (geminiApiKey: string) => {
   if (geminiApiKey && geminiApiKey !== "") {
     return new GoogleGenAI({ apiKey: geminiApiKey });
   } else if (apiKey) {
@@ -27,7 +23,7 @@ export const defaultGenerationConfig = {
   responseMimeType: "text/plain",
 };
 
-export async function generateContent(geminiApiKey:string, prompt: string) {
+export async function generateContent(geminiApiKey: string, prompt: string) {
   const result = await genAI(geminiApiKey).models.generateContent({
     model: defaultModel,
     config: defaultGenerationConfig,
@@ -38,7 +34,7 @@ export async function generateContent(geminiApiKey:string, prompt: string) {
 }
 
 export async function generateContentWithConfig(
-  geminiApiKey:string, 
+  geminiApiKey: string,
   prompt: string,
   config: GenerateContentConfig
 ) {
@@ -52,7 +48,7 @@ export async function generateContentWithConfig(
 }
 
 export async function generateWithSystemInstructionAndConfig(
-  geminiApiKey:string, 
+  geminiApiKey: string,
   systemInstruction: string,
   prompt: string,
   config: GenerateContentConfig
@@ -73,7 +69,7 @@ export async function generateWithSystemInstructionAndConfig(
 }
 
 export async function generateWithTools(
-  geminiApiKey:string, 
+  geminiApiKey: string,
   systemInstruction: string,
   historyArr: string[],
   prompt: string,
@@ -114,7 +110,7 @@ export async function generateWithTools(
 }
 
 export async function generateWithSystemInstructionConfigAndTools(
-  geminiApiKey:string, 
+  geminiApiKey: string,
   systemInstruction: string,
   prompt: string,
   config: GenerateContentConfig
