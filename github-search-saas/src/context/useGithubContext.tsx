@@ -1,3 +1,4 @@
+```typescript
 import React, { createContext, useState, ReactNode, useContext } from "react";
 
 interface GithubContextType {
@@ -44,6 +45,7 @@ export const useGithubContext = () => {
 export const GithubProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
+  // State variables for managing GitHub-related data
   const [username, setUsername] = useState("");
   const [repository, setRepository] = useState("");
   const [token, setTokenState] = useState("");
@@ -95,3 +97,4 @@ export const GithubProvider: React.FC<{ children: ReactNode }> = ({
     </GithubContext.Provider>
   );
 };
+```
