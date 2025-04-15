@@ -586,7 +586,7 @@ const CodeEdit: React.FC = () => {
               onClick={() => {
                 var filepath = "README.md";
                 if (selectedFilePath != "") {
-                  filepath = selectedFilePath.replace(/[^a-zA-Z0-9-_]/g, "-");
+                  filepath = selectedFilePath.replace(/[^a-zA-Z0-9-_/.]/g, "-");
                 }
                 submitPullRequest(
                   filepath,
@@ -603,7 +603,7 @@ const CodeEdit: React.FC = () => {
             </button>
             <input
               type="text"
-              placeholder="Filepath for pull request (Default: README.md)"
+              placeholder="Filepath of pull request (Default: README.md)"
               className="w-1/4"
               value={selectedFilePath}
               onChange={(e) => setSelectedFilePath(e.target.value)}
