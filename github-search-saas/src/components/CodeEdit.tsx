@@ -25,6 +25,7 @@ const CodeEdit: React.FC = () => {
   } = useGithubContext();
 
   const [loading, setLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   const [output, setOutput] = useState<string>(
     cache.get("generatedContent") || ""
@@ -116,14 +117,18 @@ const CodeEdit: React.FC = () => {
 
   const generateREADME = async () => {
     setLoading(true);
+    setLoadingMessage("Validating initial state...");
     setError(null);
     if (!validateInitialState()) {
       setLoading(false);
+      setLoadingMessage("");
       return;
     }
+    setLoadingMessage("Checking cache...");
     var { repoFileContents, finalPrompt, generatedContent } = checkCache();
 
     if (repoFileContents == "") {
+      setLoadingMessage("Fetching file contents...");
       let { fileContents, fileContentArray, errmsg } = await fetchFileContents(
         results
       );
@@ -138,6 +143,7 @@ const CodeEdit: React.FC = () => {
 
     console.log("repoFileContentArray after reset: ", repoFileContentArray);
     if (finalPrompt == "") {
+      setLoadingMessage("Preparing final prompt...");
       finalPrompt = `These are the contents of the files in the repository\n\n${repoFileContents}`;
       cache.set("finalPrompt", finalPrompt);
     }
@@ -145,10 +151,12 @@ const CodeEdit: React.FC = () => {
     if (!finalPrompt) {
       setError("No content to generate README for.");
       setLoading(false);
+      setLoadingMessage("");
       return;
     }
 
     if (generatedContent == "") {
+      setLoadingMessage("Generating README...");
       if (autoPullRequest) {
         console.log("Auto pull request enabled.");
         const systemInstruction = `You are an API agent. Your response will be consumed directly by code and parsed as a JSON object. Do not format your JSON output in markdown fence blocks. Do not include any explanations. Do not use code fences like \`\`\`json. Just return a raw JSON object.\nSubmit a pull request for a suggested README file for my code repository ${repository}. You do not need to include the code directly in the README, you may chose to include the file path if required.\nWrite the README in a way that is easy to understand for a beginner.\nInclude a short description of what the repository contains, an overview of the code, architecture (if applicable) and how to set up and use it.\nAlso include brief notes that the reader should look out for when using the repository such as not commiting their env file.`;
@@ -170,6 +178,8 @@ const CodeEdit: React.FC = () => {
         console.log("genWithToolsResponse: ", genWithToolsResponse);
         console.log("genWithToolsResponse text: ", genWithToolsResponse.text);
         var pullRequestResult = "Error submitting pull request";
+
+        setLoadingMessage("Submitting pull request...");
         // this is the built in function call from the api, usually dont work if context is too large
         if (genWithToolsResponse.functionCalls) {
           console.log("function calls: ", genWithToolsResponse.functionCalls);
@@ -247,19 +257,24 @@ const CodeEdit: React.FC = () => {
 
     setOutput(generatedContent);
     setLoading(false);
+    setLoadingMessage("");
   };
 
   const generateDocumentation = async () => {
     setLoading(true);
+    setLoadingMessage("Validating initial state...");
     setError(null);
     if (!validateInitialState()) {
       setLoading(false);
+      setLoadingMessage("");
       return;
     }
 
+    setLoadingMessage("Checking cache...");
     var { repoFileContents, finalPrompt, generatedContent } = checkCache();
 
     if (repoFileContents == "") {
+      setLoadingMessage("Fetching file contents...");
       const { fileContents, errmsg } = await fetchFileContents(results);
       if (errmsg) {
         setError("Error fetching file content for: " + errmsg);
@@ -269,6 +284,7 @@ const CodeEdit: React.FC = () => {
     }
 
     if (finalPrompt == "") {
+      setLoadingMessage("Preparing final prompt...");
       finalPrompt = `Generate documentation for the repository ${repository} with the following code. For conciseness, you do not need to include the code directly in the documentation, you may chose to include the file path if required. Write the documentation in a way that is easy to understand for a beginner. The documentation should use markdown styling, do not wrap your entire output in markdown tags. The documentation should be split into two sections: how-to guides and reference guides. Try to be detailed for the reference guide. Also include notes for anything the reader should look out for\n\n${repoFileContents}`;
       cache.set("finalPrompt", finalPrompt);
     }
@@ -277,11 +293,13 @@ const CodeEdit: React.FC = () => {
     if (!finalPrompt) {
       setError("No content to generate documentation for.");
       setLoading(false);
+      setLoadingMessage("");
       return;
     }
 
     var generatedContent = "";
     if (!cache.has("generatedContent")) {
+      setLoadingMessage("Generating documentation...");
       generatedContent =
         (await generateContentWithConfig(geminiApiKey, finalPrompt, {
           temperature: modelTemperature,
@@ -293,18 +311,23 @@ const CodeEdit: React.FC = () => {
 
     setOutput(generatedContent);
     setLoading(false);
+    setLoadingMessage("");
   };
 
   const checkComments = async (selectedFilePath: string) => {
     setLoading(true);
+    setLoadingMessage("Validating initial state...");
     setError(null);
     if (!validateInitialState()) {
       setLoading(false);
+      setLoadingMessage("");
       return;
     }
+    setLoadingMessage("Checking cache...");
     var { repoFileContents, finalPrompt, generatedContent } = checkCache();
 
     if (repoFileContents == "") {
+      setLoadingMessage("Fetching file contents...");
       let { fileContents, fileContentArray, errmsg } = await fetchFileContents(
         results
       );
@@ -319,11 +342,13 @@ const CodeEdit: React.FC = () => {
 
     console.log("repoFileContentArray after reset: ", repoFileContentArray);
     if (finalPrompt == "") {
+      setLoadingMessage("Preparing final prompt...");
       finalPrompt = `These are the contents of the files in the repository\n\n${repoFileContents}`;
       cache.set("finalPrompt", finalPrompt);
     }
 
     if (generatedContent == "") {
+      setLoadingMessage("Validating comments...");
       const systemInstruction = `Help me check the comments written for the code ${selectedFilePath} and make sure they are accurate. Give me the full updated file only if comments in the file needs changes. Otherwise just let me know that the comments are accurate.`;
 
       generatedContent =
@@ -342,18 +367,23 @@ const CodeEdit: React.FC = () => {
     }
 
     setLoading(false);
+    setLoadingMessage("");
   };
 
   const wellDocumented = async (selectedFilePath: string) => {
     setLoading(true);
+    setLoadingMessage("Validating initial state...");
     setError(null);
     if (!validateInitialState()) {
       setLoading(false);
+      setLoadingMessage("");
       return;
     }
+    setLoadingMessage("Checking cache...");
     var { repoFileContents, finalPrompt, generatedContent } = checkCache();
 
     if (repoFileContents == "") {
+      setLoadingMessage("Fetching file contents...");
       let { fileContents, fileContentArray, errmsg } = await fetchFileContents(
         results
       );
@@ -368,11 +398,13 @@ const CodeEdit: React.FC = () => {
 
     console.log("repoFileContentArray after reset: ", repoFileContentArray);
     if (finalPrompt == "") {
+      setLoadingMessage("Preparing final prompt...");
       finalPrompt = `These are the contents of the files in the repository\n\n${repoFileContents}`;
       cache.set("finalPrompt", finalPrompt);
     }
 
     if (generatedContent == "") {
+      setLoadingMessage("Validating documentation...");
       const systemInstruction = `Help me make sure that the code ${selectedFilePath} is well documented. Give me the full updated file only if comments in the file needs changes.`;
 
       generatedContent =
@@ -391,6 +423,7 @@ const CodeEdit: React.FC = () => {
     }
 
     setLoading(false);
+    setLoadingMessage("");
   };
 
   const submitPullRequest = async (
@@ -625,7 +658,7 @@ const CodeEdit: React.FC = () => {
             )}
           </div>
         </div>
-        {loading && <p>Loading...</p>}
+        {loading && <p>{loadingMessage || "Loading..."}</p>}
         {error && <p className="text-red-500">{error}</p>}
 
         <div className="w-full">
