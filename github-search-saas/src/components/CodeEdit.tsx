@@ -324,7 +324,56 @@ const CodeEdit: React.FC = () => {
     }
 
     if (generatedContent == "") {
-      const systemInstruction = `Help me check the comments written for the code ${selectedFilePath} and make sure they are accurate. Give me the full updated file only if comments in the file needs changes.`;
+      const systemInstruction = `Help me check the comments written for the code ${selectedFilePath} and make sure they are accurate. Give me the full updated file only if comments in the file needs changes. Otherwise just let me know that the comments are accurate.`;
+
+      generatedContent =
+        (await generateWithSystemInstructionAndConfig(
+          geminiApiKey,
+          systemInstruction,
+          finalPrompt,
+          {
+            temperature: modelTemperature,
+          }
+        )) || "Error generating content";
+
+      console.log("generatedContent: ", generatedContent);
+      cache.set("generatedContent", generatedContent);
+      setOutput(generatedContent);
+    }
+
+    setLoading(false);
+  };
+
+  const wellDocumented = async (selectedFilePath: string) => {
+    setLoading(true);
+    setError(null);
+    if (!validateInitialState()) {
+      setLoading(false);
+      return;
+    }
+    var { repoFileContents, finalPrompt, generatedContent } = checkCache();
+
+    if (repoFileContents == "") {
+      let { fileContents, fileContentArray, errmsg } = await fetchFileContents(
+        results
+      );
+      if (errmsg) {
+        setError("Error fetching file content for: " + errmsg);
+      }
+      console.log("promptArray reset: ", fileContentArray);
+      repoFileContents = fileContents;
+      await setRepoFileContentArray(fileContentArray);
+      cache.set("repoFileContents", repoFileContents);
+    }
+
+    console.log("repoFileContentArray after reset: ", repoFileContentArray);
+    if (finalPrompt == "") {
+      finalPrompt = `These are the contents of the files in the repository\n\n${repoFileContents}`;
+      cache.set("finalPrompt", finalPrompt);
+    }
+
+    if (generatedContent == "") {
+      const systemInstruction = `Help me make sure that the code ${selectedFilePath} is well documented. Give me the full updated file only if comments in the file needs changes.`;
 
       generatedContent =
         (await generateWithSystemInstructionAndConfig(
@@ -535,6 +584,12 @@ const CodeEdit: React.FC = () => {
                     className="!text-base"
                   >
                     Validate Comments in the file
+                  </button>
+                  <button
+                    onClick={() => wellDocumented(selectedItems.path)}
+                    className="!text-base"
+                  >
+                    Well Documented File
                   </button>
                 </>
               ) : (
