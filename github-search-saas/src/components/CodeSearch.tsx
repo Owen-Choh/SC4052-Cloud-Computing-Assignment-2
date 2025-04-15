@@ -185,20 +185,12 @@ const CodeSearch = () => {
               >
                 <div className="flex gap-4 items-center">
                   <input
-                    type="checkbox"
+                    type="radio"
                     id={`select-${item.sha}`}
                     className="mr-2"
-                    checked={selectedItems.includes(item.sha) || false}
-                    onChange={(e) => {
-                      console.log(selectedItems);
-                      if (e.target.checked) {
-                        setSelectedItems((prev) => [...(prev || []), item.sha]);
-                      } else {
-                        setSelectedItems(
-                          (prev) =>
-                            prev?.filter((sha) => sha !== item.sha) || []
-                        );
-                      }
+                    checked={selectedItems.sha === item.sha}
+                    onChange={() => {
+                      setSelectedItems(item);
                     }}
                   />
                   <label htmlFor={`select-${item.sha}`} className="flex-grow">

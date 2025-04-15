@@ -292,6 +292,54 @@ const CodeEdit: React.FC = () => {
     setLoading(false);
   };
 
+  const checkComments = async (selectedFilePath: string) => {
+    setLoading(true);
+    setError(null);
+    if (!validateInitialState()) {
+      setLoading(false);
+      return;
+    }
+    var { repoFileContents, finalPrompt, generatedContent } = checkCache();
+
+    if (repoFileContents == "") {
+      let { fileContents, fileContentArray, errmsg } = await fetchFileContents(
+        results
+      );
+      if (errmsg) {
+        setError("Error fetching file content for: " + errmsg);
+      }
+      console.log("promptArray reset: ", fileContentArray);
+      repoFileContents = fileContents;
+      await setRepoFileContentArray(fileContentArray);
+      cache.set("repoFileContents", repoFileContents);
+    }
+
+    console.log("repoFileContentArray after reset: ", repoFileContentArray);
+    if (finalPrompt == "") {
+      finalPrompt = `These are the contents of the files in the repository\n\n${repoFileContents}`;
+      cache.set("finalPrompt", finalPrompt);
+    }
+
+    if (generatedContent == "") {
+      const systemInstruction = `Help me check the comments written for the code ${selectedFilePath} and make sure they are accurate. Give me the full updated file only if comments in the file needs changes.`;
+
+      generatedContent =
+        (await generateWithSystemInstructionAndConfig(
+          systemInstruction,
+          finalPrompt,
+          {
+            temperature: modelTemperature,
+          }
+        )) || "Error generating content";
+
+      console.log("generatedContent: ", generatedContent);
+      cache.set("generatedContent", generatedContent);
+      setOutput(generatedContent);
+    }
+
+    setLoading(false);
+  };
+
   const submitPullRequest = async (
     filePath: string,
     commitMessage: string,
@@ -489,15 +537,19 @@ const CodeEdit: React.FC = () => {
             <button onClick={clearGenContent}>Clear AI output cache</button>
           </div>
         </div>
-        <p>
-          Items:{" "}
-          {selectedItems && selectedItems.length > 0
-            ? results
-                .filter((item) => selectedItems.includes(item.sha))
-                .map((item) => `${item.name} (${item.repository.full_name})`)
-                .join(", ")
-            : "None selected"}
-        </p>
+        <div className="flex gap-2 text-lg items-center">
+          Selected Item:
+          {selectedItems ? (
+            <>
+              <p>{selectedItems.path}</p>
+              <button onClick={() => checkComments(selectedItems.path)} className="!text-base">
+                Validate Comments in the file
+              </button>
+            </>
+          ) : (
+            "None selected"
+          )}
+        </div>
         {loading && <p>Loading...</p>}
         {error && <p className="text-red-500">{error}</p>}
 
