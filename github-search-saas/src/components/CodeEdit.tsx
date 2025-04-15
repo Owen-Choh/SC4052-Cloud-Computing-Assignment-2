@@ -15,6 +15,7 @@ const CodeEdit: React.FC = () => {
   const {
     username,
     repository,
+    token,
     selectedItems,
     results,
     cache,
@@ -100,7 +101,12 @@ const CodeEdit: React.FC = () => {
     for (const item of results) {
       try {
         const response = await githubGetCodeApi.get(
-          `/${item.repository.full_name}/contents/${item.path}`
+          `/${item.repository.full_name}/contents/${item.path}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
         );
         const fileContent = atob(response.data.content);
         fileContents += item.path + "\n" + fileContent + "\n\n";
@@ -134,6 +140,7 @@ const CodeEdit: React.FC = () => {
       );
       if (errmsg) {
         setError("Error fetching file content for: " + errmsg);
+        return;
       }
       console.log("promptArray reset: ", fileContentArray);
       repoFileContents = fileContents;
@@ -210,6 +217,8 @@ const CodeEdit: React.FC = () => {
                 parsedResponse.pullRequestBody,
                 parsedResponse.fileContent
               );
+              generatedContent =
+                pullRequestResult + "\n" + genWithToolsResponse.text;
             } catch (error) {
               try {
                 // try again after cleaning since the ai keeps wrapping in these tags
@@ -251,10 +260,9 @@ const CodeEdit: React.FC = () => {
             }
           )) || "";
       }
-
-      cache.set("generatedContent", generatedContent);
     }
 
+    cache.set("generatedContent", generatedContent);
     setOutput(generatedContent);
     setLoading(false);
     setLoadingMessage("");
@@ -278,6 +286,7 @@ const CodeEdit: React.FC = () => {
       const { fileContents, errmsg } = await fetchFileContents(results);
       if (errmsg) {
         setError("Error fetching file content for: " + errmsg);
+        return;
       }
       repoFileContents = fileContents;
       cache.set("repoFileContents", repoFileContents);
@@ -333,6 +342,7 @@ const CodeEdit: React.FC = () => {
       );
       if (errmsg) {
         setError("Error fetching file content for: " + errmsg);
+        return;
       }
       console.log("promptArray reset: ", fileContentArray);
       repoFileContents = fileContents;
@@ -389,6 +399,7 @@ const CodeEdit: React.FC = () => {
       );
       if (errmsg) {
         setError("Error fetching file content for: " + errmsg);
+        return;
       }
       console.log("promptArray reset: ", fileContentArray);
       repoFileContents = fileContents;
@@ -484,14 +495,24 @@ const CodeEdit: React.FC = () => {
     try {
       // get default branch
       const defaultBranchResponse = await githubGetCodeApi.get(
-        `/${username}/${repository}`
+        `/${username}/${repository}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
       const defaultBranch = defaultBranchResponse.data.default_branch;
       console.log("default branch of repo: ", defaultBranch);
 
       // get latest commit and tree
       const commitAndTreeResponse = await githubGetCodeApi.get(
-        `/${username}/${repository}/branches/${defaultBranch}`
+        `/${username}/${repository}/branches/${defaultBranch}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
       const oldCommit = commitAndTreeResponse.data.commit.sha;
       const oldTree = commitAndTreeResponse.data.commit.commit.tree.sha;
@@ -510,6 +531,11 @@ const CodeEdit: React.FC = () => {
               content: fileContent,
             },
           ],
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
       );
       const newTree = newTreeResponse.data.sha;
@@ -521,6 +547,12 @@ const CodeEdit: React.FC = () => {
           message: commitMessage,
           tree: newTree,
           parents: [oldCommit],
+        },
+
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
       );
       const newCommit = newCommitResponse.data.sha;
@@ -533,6 +565,11 @@ const CodeEdit: React.FC = () => {
         {
           ref: `refs/heads/${newBranchName}`,
           sha: newCommit,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
       );
       console.log("new reference: ", newReferenceResponse);
@@ -546,6 +583,11 @@ const CodeEdit: React.FC = () => {
           body: pullRequestBody,
           head: newBranchName,
           base: defaultBranch,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
       );
       console.log("pull request response: ", pullRequestResponse);
@@ -560,9 +602,16 @@ const CodeEdit: React.FC = () => {
     <div className="p-4 border-gray-500 border-2 rounded-lg flex-grow">
       <div className="flex flex-col gap-4 items-start">
         <h2 className="text-2xl">Extra functions</h2>
+        <button
+          onClick={() => {
+            console.log(cache.get("generatedContent"));
+          }}
+        >
+          click
+        </button>
         <div className="flex gap-4 w-full">
           <p className="text-lg text-nowrap">
-            Model Temperature (how much variation in the output):
+            Model Temperature (how much creativity/variation in the output):
           </p>
           <div className="w-1/3">
             <Slider

@@ -19,6 +19,7 @@ const CodeSearch = () => {
     setResults,
     descriptions,
     setDescriptions,
+    geminiApiKey,
   } = useGithubContext();
 
   const [loading, setLoading] = useState(false);
@@ -136,6 +137,7 @@ const CodeSearch = () => {
 
       var desc = query ? query : "all code in the repository";
       const description = await generateContent(
+        geminiApiKey,
         `User searched for ${query} and wants a description of the code from the file ${
           item.name
         } - ${item.repository.full_name}
