@@ -3,11 +3,19 @@ import {
   GoogleGenAI,
   GenerateContentConfig,
   Type,
-  FunctionCallingConfigMode,
 } from "@google/genai";
 
 const apiKey = GEMINI_API_KEY;
-export const genAI = new GoogleGenAI({ apiKey: apiKey });
+export const genAI = (geminiApiKey:string) => {
+  if (geminiApiKey && geminiApiKey !== "") {
+    return new GoogleGenAI({ apiKey: geminiApiKey });
+  } else if (apiKey) {
+    return new GoogleGenAI({ apiKey: apiKey });
+  }
+  throw new Error(
+    "Gemini API key is not provided. Please set the GEMINI_API_KEY environment variable or provide it in the context."
+  );
+};
 
 const defaultModel = "gemini-2.0-flash";
 
@@ -19,8 +27,8 @@ export const defaultGenerationConfig = {
   responseMimeType: "text/plain",
 };
 
-export async function generateContent(prompt: string) {
-  const result = await genAI.models.generateContent({
+export async function generateContent(geminiApiKey:string, prompt: string) {
+  const result = await genAI(geminiApiKey).models.generateContent({
     model: defaultModel,
     config: defaultGenerationConfig,
     contents: prompt,
@@ -30,10 +38,11 @@ export async function generateContent(prompt: string) {
 }
 
 export async function generateContentWithConfig(
+  geminiApiKey:string, 
   prompt: string,
   config: GenerateContentConfig
 ) {
-  const result = await genAI.models.generateContent({
+  const result = await genAI(geminiApiKey).models.generateContent({
     model: defaultModel,
     config: config,
     contents: prompt,
@@ -43,11 +52,12 @@ export async function generateContentWithConfig(
 }
 
 export async function generateWithSystemInstructionAndConfig(
+  geminiApiKey:string, 
   systemInstruction: string,
   prompt: string,
   config: GenerateContentConfig
 ) {
-  const result = await genAI.models.generateContent({
+  const result = await genAI(geminiApiKey).models.generateContent({
     model: defaultModel,
     config: {
       ...config,
@@ -63,6 +73,7 @@ export async function generateWithSystemInstructionAndConfig(
 }
 
 export async function generateWithTools(
+  geminiApiKey:string, 
   systemInstruction: string,
   historyArr: string[],
   prompt: string,
@@ -78,7 +89,7 @@ export async function generateWithTools(
     }));
   }
   console.log("mappedHistory", mappedHistory);
-  const chat = genAI.chats.create({
+  const chat = genAI(geminiApiKey).chats.create({
     model: defaultModel,
     history: mappedHistory,
     config: {
@@ -103,6 +114,7 @@ export async function generateWithTools(
 }
 
 export async function generateWithSystemInstructionConfigAndTools(
+  geminiApiKey:string, 
   systemInstruction: string,
   prompt: string,
   config: GenerateContentConfig
@@ -110,7 +122,7 @@ export async function generateWithSystemInstructionConfigAndTools(
   let promptCopy = prompt;
   promptCopy = promptCopy.replace("```", "");
 
-  const result = await genAI.models.generateContent({
+  const result = await genAI(geminiApiKey).models.generateContent({
     model: defaultModel,
     config: {
       ...config,

@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useGithubContext } from "../context/useGithubContext";
-import { githubSearchRepoApi } from "../api/apiconfigs";
+import { githubSearchRepoApi, setOctokit } from "../api/apiconfigs";
 
 const GeneralInfo: React.FC = () => {
   const {
@@ -12,6 +12,8 @@ const GeneralInfo: React.FC = () => {
     setToken,
     repos,
     setRepos,
+    geminiApiKey,
+    setGeminiApiKey,
   } = useGithubContext();
 
   const [loading, setLoading] = useState(false);
@@ -47,15 +49,26 @@ const GeneralInfo: React.FC = () => {
         <h2 className="text-2xl">General Information</h2>
       </div>
       <div className="flex flex-col gap-4 mt-4">
-        <label className="flex gap-2">
+        <label className="flex gap-2 text-lg items-center">
+          Gemini API Key:
+          <input
+            type="text"
+            value={geminiApiKey}
+            onChange={(e) => setGeminiApiKey(e.target.value)}
+          />
+        </label>
+        <label className="flex gap-2 text-lg items-center">
           GitHub Token:
           <input
             type="password"
             value={token}
-            onChange={(e) => setToken(e.target.value)}
+            onChange={(e) => {
+              setToken(e.target.value);
+              setOctokit(e.target.value); 
+            }}
           />
         </label>
-        <label className="flex gap-2">
+        <label className="flex gap-2 text-lg items-center">
           GitHub Username:
           <input
             type="text"
@@ -63,7 +76,7 @@ const GeneralInfo: React.FC = () => {
             onChange={(e) => setUsername(e.target.value)}
           />
         </label>
-        <label className="flex gap-2">
+        <label className="flex gap-2 text-lg items-center">
           Repository Name:
           {loading ? (
             <span>Loading...</span>

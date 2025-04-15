@@ -3,6 +3,7 @@ import { githubSearchCodeApi, octokit } from "../api/apiconfigs";
 import { useGithubContext } from "../context/useGithubContext";
 import { generateContent } from "../geminiAPI/geminiAPI";
 import Markdown from "react-markdown";
+import { components } from "@octokit/openapi-types";
 
 const CodeSearch = () => {
   const {
@@ -23,38 +24,36 @@ const CodeSearch = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [loadingDescriptions, setLoadingDescriptions] = useState({});
-  
-  function parseData(data) {
+
+  type SearchCodeResult = 
+  {
+    total_count: number;
+    incomplete_results: boolean;
+    items: components["schemas"]["code-search-result-item"][];
+  };
+
+  function parseData(data: SearchCodeResult) {
     // If the data is an array, return that
-      if (Array.isArray(data)) {
-        return data
-      }
-  
+    if (Array.isArray(data)) {
+      return data;
+    }
+
     // Some endpoints respond with 204 No Content instead of empty array
     //   when there is no data. In that case, return an empty array.
     if (!data) {
-      return []
+      return [];
     }
-  
-    // Otherwise, the array of items that we want is in an object
-    // Delete keys that don't include the array of items
-    delete data.incomplete_results;
-    delete data.repository_selection;
-    delete data.total_count;
-    // Pull out the array of items
-    const namespaceKey = Object.keys(data)[0];
-    data = data[namespaceKey];
-  
-    return data;
-  }
 
+    // Pull out the array of items
+    return data.items;
+  }
 
   const handleSearch = async () => {
     setResults([]);
     setSelectedItems([]);
     // better to keep the descriptions when a new search is made since api calls are expensive
     // and can use the descriptions from the previous search if sha is same
-    // setDescriptions({}); 
+    // setDescriptions({});
     setLoading(true);
     setError(null);
 
@@ -66,7 +65,7 @@ const CodeSearch = () => {
         }
       });
       var userFilter = "";
-      
+
       var nameWithRepo = "";
       if (repository && username) {
         nameWithRepo = `+repo:${username}/${repository}`;
@@ -76,23 +75,25 @@ const CodeSearch = () => {
 
       const nextPattern = /(?<=<)([\S]*)(?=>; rel="Next")/i;
       let pagesRemaining = true;
-      let data = [];
+      let data: any[] = [];
       const queryString = `${query}${languageFilter}${userFilter}${nameWithRepo}`;
       let response = await octokit.request("GET /search/code", {
         q: queryString,
         per_page: 100,
       });
-      pagesRemaining = response.data.total_count > 100
+      pagesRemaining = response.data.total_count > 100;
 
-      let parsedData = parseData(response.data)
+      let parsedData = parseData(response.data);
       data = [...data, ...parsedData];
-      
+
       let linkHeader = response.headers.link;
       while (pagesRemaining) {
         let url = linkHeader.match(nextPattern)[0] || null;
-        
-        if(!url) {
-          console.log("No next url detected in the link header. Stopping pagination.");
+
+        if (!url) {
+          console.log(
+            "No next url detected in the link header. Stopping pagination."
+          );
           break;
         }
 
@@ -100,11 +101,12 @@ const CodeSearch = () => {
           per_page: 100,
         });
         linkHeader = response.headers.link;
-    
-        const parsedData = parseData(response.data)
+
+        const parsedData = parseData(response.data);
         data = [...data, ...parsedData];
-    
-        pagesRemaining = (linkHeader && linkHeader.includes(`rel=\"next\"`)) || false;
+
+        pagesRemaining =
+          (linkHeader && linkHeader.includes(`rel=\"next\"`)) || false;
       }
 
       setResults(response.data.items);
@@ -176,7 +178,7 @@ const CodeSearch = () => {
 
       {results.length > 0 && (
         <div className="flex flex-col gap-2">
-          <h2>Results:{" "}{results.length}</h2>
+          <h2>Results: {results.length}</h2>
           <ul className="border-gray-500 border-2 rounded-lg p-2">
             {results.map((item) => (
               <li

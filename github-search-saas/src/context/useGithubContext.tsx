@@ -23,6 +23,8 @@ interface GithubContextType {
   setCache: (cache: Map<string, string>) => void;
   repoFileContentArray: string[];
   setRepoFileContentArray: (array: string[]) => void;
+  geminiApiKey: string;
+  setGeminiApiKey: (key: string) => void;
 }
 
 export const GithubContext = createContext<GithubContextType | undefined>(
@@ -45,7 +47,7 @@ export const GithubProvider: React.FC<{ children: ReactNode }> = ({
   const [username, setUsername] = useState("");
   const [repository, setRepository] = useState("");
   const [token, setTokenState] = useState("");
-  const [selectedItem, setSelectedItem] = useState<>(null);
+  const [selectedItem, setSelectedItem] = useState(null);
   const [repos, setRepos] = useState<string[]>([]);
   const [query, setQuery] = useState("");
   const [fileTypes, setFileTypes] = useState("");
@@ -53,6 +55,7 @@ export const GithubProvider: React.FC<{ children: ReactNode }> = ({
   const [descriptions, setDescriptions] = useState<Record<string, string>>({});
   const [cache, setCache] = useState<Map<string, string>>(new Map());
   const [repoFileContentArray, setRepoFileContentArray] = useState<string[]>([]);
+  const [geminiApiKey, setGeminiApiKey] = useState("");
 
   const setToken = (token: string) => {
     setTokenState(token);
@@ -84,6 +87,8 @@ export const GithubProvider: React.FC<{ children: ReactNode }> = ({
         setCache,
         repoFileContentArray,
         setRepoFileContentArray,
+        geminiApiKey,
+        setGeminiApiKey,
       }}
     >
       {children}

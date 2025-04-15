@@ -21,6 +21,7 @@ const CodeEdit: React.FC = () => {
     setCache,
     repoFileContentArray,
     setRepoFileContentArray,
+    geminiApiKey,
   } = useGithubContext();
 
   const [loading, setLoading] = useState(false);
@@ -158,6 +159,7 @@ const CodeEdit: React.FC = () => {
         );
         const genWithToolsResponse =
           await generateWithSystemInstructionConfigAndTools(
+            geminiApiKey,
             systemInstruction,
             finalPrompt,
             {
@@ -231,6 +233,7 @@ const CodeEdit: React.FC = () => {
 
         generatedContent =
           (await generateWithSystemInstructionAndConfig(
+            geminiApiKey,
             systemInstruction,
             finalPrompt,
             {
@@ -280,7 +283,7 @@ const CodeEdit: React.FC = () => {
     var generatedContent = "";
     if (!cache.has("generatedContent")) {
       generatedContent =
-        (await generateContentWithConfig(finalPrompt, {
+        (await generateContentWithConfig(geminiApiKey, finalPrompt, {
           temperature: modelTemperature,
         })) || "Error generating content";
       cache.set("generatedContent", generatedContent);
@@ -325,6 +328,7 @@ const CodeEdit: React.FC = () => {
 
       generatedContent =
         (await generateWithSystemInstructionAndConfig(
+          geminiApiKey,
           systemInstruction,
           finalPrompt,
           {
