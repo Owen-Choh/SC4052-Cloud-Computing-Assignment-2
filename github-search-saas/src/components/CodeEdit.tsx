@@ -323,6 +323,63 @@ const CodeEdit: React.FC = () => {
     setLoadingMessage("");
   };
 
+  const generateComments = async () => {
+    setLoading(true);
+    setLoadingMessage("Validating initial state...");
+    setError(null);
+    if (!validateInitialState()) {
+      setLoading(false);
+      setLoadingMessage("");
+      return;
+    }
+    setLoadingMessage("Checking cache...");
+    var { repoFileContents, finalPrompt, generatedContent } = checkCache();
+
+    if (repoFileContents == "") {
+      setLoadingMessage("Fetching file contents...");
+      let { fileContents, fileContentArray, errmsg } = await fetchFileContents(
+        results
+      );
+      if (errmsg) {
+        setError("Error fetching file content for: " + errmsg);
+        return;
+      }
+      console.log("promptArray reset: ", fileContentArray);
+      repoFileContents = fileContents;
+      await setRepoFileContentArray(fileContentArray);
+      cache.set("repoFileContents", repoFileContents);
+    }
+
+    console.log("repoFileContentArray after reset: ", repoFileContentArray);
+    if (finalPrompt == "") {
+      setLoadingMessage("Preparing final prompt...");
+      finalPrompt = `These are the contents of the files in the repository\n\n${repoFileContents}`;
+      cache.set("finalPrompt", finalPrompt);
+    }
+
+    if (generatedContent == "") {
+      setLoadingMessage("Validating documentation...");
+      const systemInstruction = `Help me make sure that the code ${selectedFilePath} is well documented. Give me the full updated file only if comments in the file needs changes.`;
+
+      generatedContent =
+        (await generateWithSystemInstructionAndConfig(
+          geminiApiKey,
+          systemInstruction,
+          finalPrompt,
+          {
+            temperature: modelTemperature,
+          }
+        )) || "Error generating content";
+
+      console.log("generatedContent: ", generatedContent);
+      cache.set("generatedContent", generatedContent);
+      setOutput(generatedContent);
+    }
+
+    setLoading(false);
+    setLoadingMessage("");
+  };
+
   const checkComments = async (selectedFilePath: string) => {
     setLoading(true);
     setLoadingMessage("Validating initial state...");
@@ -643,7 +700,7 @@ const CodeEdit: React.FC = () => {
                   Generate Documentation
                 </button>
 
-                <div className="flex gap-4 items-center mb-2">
+                <div className="flex gap-4 items-center">
                   <button onClick={generateREADME} className="w-fit">
                     Generate README
                   </button>
@@ -654,29 +711,11 @@ const CodeEdit: React.FC = () => {
                     onChange={(e) => setAutoPullRequest(e.target.checked)}
                   />
                 </div>
+
+                <button onClick={generateComments} className="w-fit">
+                  Generate Comments
+                </button>
               </div>
-            </div>
-            <div className="flex gap-2 text-lg items-center">
-              Selected Item:
-              {selectedItems && selectedItems.path ? (
-                <>
-                  <p>{selectedItems.path}</p>
-                  <button
-                    onClick={() => checkComments(selectedItems.path)}
-                    className="!text-base"
-                  >
-                    Validate Comments in the file
-                  </button>
-                  <button
-                    onClick={() => wellDocumented(selectedItems.path)}
-                    className="!text-base"
-                  >
-                    Well Documented File
-                  </button>
-                </>
-              ) : (
-                " None selected"
-              )}
             </div>
           </div>
           <div className="ml-auto flex flex-col gap-2">
@@ -707,7 +746,35 @@ const CodeEdit: React.FC = () => {
             )}
           </div>
         </div>
-        {loading && <p>{loadingMessage || "Loading..."}</p>}
+        <div className="flex gap-2 text-lg">
+          Selected Items:
+          {selectedItems && selectedItems.length > 0 ? (
+            <ul className="flex flex-col gap-2">
+              {selectedItems.map((item) => (
+                <li key={item.sha} className="flex gap-2">
+                  <p>{item.path}</p>
+                  <button
+                    onClick={() => checkComments(item.path)}
+                    className="!text-base"
+                  >
+                    Validate Comments in the file
+                  </button>
+                  <button
+                    onClick={() => wellDocumented(item.path)}
+                    className="!text-base"
+                  >
+                    Well Documented File
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            " None selected"
+          )}
+        </div>
+        {loading && (
+          <p className="text-green-500">{loadingMessage || "Loading..."}</p>
+        )}
         {error && <p className="text-red-500">{error}</p>}
 
         <div className="w-full">

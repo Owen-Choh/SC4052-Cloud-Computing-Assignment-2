@@ -7,8 +7,8 @@ interface GithubContextType {
   setRepository: (repository: string) => void;
   token: string;
   setToken: (token: string) => void;
-  selectedItems: any;
-  setSelectedItems: (item: any) => void;
+  selectedItems: any[]; // Change to an array to support multiple selections
+  setSelectedItems: (items: any[]) => void;
   repos: string[];
   setRepos: (repos: string[]) => void;
   query: string;
@@ -47,7 +47,7 @@ export const GithubProvider: React.FC<{ children: ReactNode }> = ({
   const [username, setUsername] = useState("");
   const [repository, setRepository] = useState("");
   const [token, setTokenState] = useState("");
-  const [selectedItem, setSelectedItem] = useState(null);
+  const [selectedItems, setSelectedItems] = useState<any[]>([]); // Update state to an array
   const [repos, setRepos] = useState<string[]>([]);
   const [query, setQuery] = useState("");
   const [fileTypes, setFileTypes] = useState("");
@@ -71,8 +71,8 @@ export const GithubProvider: React.FC<{ children: ReactNode }> = ({
         setRepository,
         token,
         setToken,
-        selectedItems: selectedItem,
-        setSelectedItems: setSelectedItem,
+        selectedItems,
+        setSelectedItems,
         repos,
         setRepos,
         query,

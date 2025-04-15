@@ -26,8 +26,7 @@ const CodeSearch = () => {
   const [error, setError] = useState(null);
   const [loadingDescriptions, setLoadingDescriptions] = useState({});
 
-  type SearchCodeResult = 
-  {
+  type SearchCodeResult = {
     total_count: number;
     incomplete_results: boolean;
     items: components["schemas"]["code-search-result-item"][];
@@ -51,7 +50,7 @@ const CodeSearch = () => {
 
   const handleSearch = async () => {
     setResults([]);
-    setSelectedItems([]);
+    setSelectedItems([]); // Initialize as an empty array for multiple selections
     // better to keep the descriptions when a new search is made since api calls are expensive
     // and can use the descriptions from the previous search if sha is same
     // setDescriptions({});
@@ -78,12 +77,13 @@ const CodeSearch = () => {
       let pagesRemaining = true;
       let data: any[] = [];
       const queryString = `${query}${languageFilter}${userFilter}${nameWithRepo}`;
+
+      const perpage = 100;
       let response = await octokit.request("GET /search/code", {
         q: queryString,
-        per_page: 100,
+        per_page: perpage,
       });
-      pagesRemaining = response.data.total_count > 100;
-
+      pagesRemaining = response.data.total_count > perpage;
       let parsedData = parseData(response.data);
       data = [...data, ...parsedData];
 
@@ -99,7 +99,7 @@ const CodeSearch = () => {
         }
 
         const response = await octokit.request(`GET ${url}`, {
-          per_page: 100,
+          per_page: perpage,
         });
         linkHeader = response.headers.link;
 
@@ -110,7 +110,7 @@ const CodeSearch = () => {
           (linkHeader && linkHeader.includes(`rel=\"next\"`)) || false;
       }
 
-      setResults(response.data.items);
+      setResults(data);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -189,12 +189,18 @@ const CodeSearch = () => {
               >
                 <div className="flex gap-4 items-center">
                   <input
-                    type="radio"
+                    type="checkbox"
                     id={`select-${item.sha}`}
                     className="mr-2"
-                    checked={selectedItems.sha === item.sha}
+                    checked={selectedItems.some(
+                      (selected) => selected.sha === item.sha
+                    )}
                     onChange={() => {
-                      setSelectedItems(item);
+                      setSelectedItems((prev) =>
+                        prev.some((selected) => selected.sha === item.sha)
+                          ? prev.filter((selected) => selected.sha !== item.sha)
+                          : [...prev, item]
+                      );
                     }}
                   />
                   <label htmlFor={`select-${item.sha}`} className="flex-grow">
