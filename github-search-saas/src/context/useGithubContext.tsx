@@ -1,3 +1,4 @@
+```typescript
 import React, { createContext, useState, ReactNode, useContext } from "react";
 
 interface GithubContextType {
@@ -27,10 +28,12 @@ interface GithubContextType {
   setGeminiApiKey: (key: string) => void;
 }
 
+// Create a context for GitHub-related state
 export const GithubContext = createContext<GithubContextType | undefined>(
   undefined
 );
 
+// Custom hook to use the GitHub context
 export const useGithubContext = () => {
   const context = useContext(GithubContext);
   if (!context) {
@@ -41,9 +44,11 @@ export const useGithubContext = () => {
   return context;
 };
 
+// GitHub context provider component
 export const GithubProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
+  // State variables for various GitHub-related data
   const [username, setUsername] = useState("");
   const [repository, setRepository] = useState("");
   const [token, setTokenState] = useState("");
@@ -57,6 +62,7 @@ export const GithubProvider: React.FC<{ children: ReactNode }> = ({
   const [repoFileContentArray, setRepoFileContentArray] = useState<string[]>([]);
   const [geminiApiKey, setGeminiApiKey] = useState("");
 
+  // Function to update the token state
   const setToken = (token: string) => {
     setTokenState(token);
     // TODO: update the octokit instance with the new token
@@ -95,3 +101,4 @@ export const GithubProvider: React.FC<{ children: ReactNode }> = ({
     </GithubContext.Provider>
   );
 };
+```
