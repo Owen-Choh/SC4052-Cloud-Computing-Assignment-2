@@ -26,7 +26,12 @@ const GeneralInfo: React.FC = () => {
 
       try {
         const response = await githubSearchRepoApi.get(
-          githubSearchRepoApi.defaults.baseURL + `?q=user:${username}`
+          githubSearchRepoApi.defaults.baseURL + `?q=user:${username}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
         );
 
         if (!response) {
@@ -36,10 +41,12 @@ const GeneralInfo: React.FC = () => {
           setRepos(repoNames);
         }
       } catch (error) {
-        setError("An error occurred while fetching repositories.");
+        setError("An error occurred while fetching repositories. Are you sure the username and token is valid?");
       } finally {
         setLoading(false);
       }
+    } else {
+      setError("Please enter a GitHub username.");
     }
   };
 
@@ -64,7 +71,7 @@ const GeneralInfo: React.FC = () => {
             value={token}
             onChange={(e) => {
               setToken(e.target.value);
-              setOctokit(e.target.value); 
+              setOctokit(e.target.value);
             }}
           />
         </label>
@@ -78,28 +85,6 @@ const GeneralInfo: React.FC = () => {
         </label>
         <label className="flex gap-2 text-lg items-center">
           Repository Name:
-          {loading ? (
-            <span>Loading...</span>
-          ) : error ? (
-            <span className="text-red-500">{error}</span>
-          ) : (
-            <select
-              value={repository}
-              onChange={(e) => {
-                const selectedRepo = e.target.value;
-                setRepository(selectedRepo); // Update context provider
-              }}
-            >
-              <option value="" className="text-black">
-                Select a repository
-              </option>
-              {repos.map((repo) => (
-                <option key={repo} value={repo} className="text-black">
-                  {repo}
-                </option>
-              ))}
-            </select>
-          )}
           <button
             onClick={fetchRepos}
             disabled={loading}
@@ -107,8 +92,32 @@ const GeneralInfo: React.FC = () => {
           >
             {loading ? "Fetching..." : "Get Repos"}
           </button>
+          {loading ? (
+            <span>Loading...</span>
+          ) : (
+            <>
+              <select
+                value={repository}
+                onChange={(e) => {
+                  const selectedRepo = e.target.value;
+                  setRepository(selectedRepo); // Update context provider
+                }}
+              >
+                <option value="" className="text-black">
+                  Select a repository
+                </option>
+                {repos.map((repo) => (
+                  <option key={repo} value={repo} className="text-black">
+                    {repo}
+                  </option>
+                ))}
+              </select>
+            </>
+          )}
+          
         </label>
-      </div>
+        {error && <span className="text-lg text-red-500">{error}</span>}
+        </div>
     </div>
   );
 };
