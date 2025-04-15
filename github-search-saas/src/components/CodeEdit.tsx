@@ -30,6 +30,7 @@ const CodeEdit: React.FC = () => {
   );
   const [modelTemperature, setModelTemperature] = useState<number>(0);
   const [autoPullRequest, setAutoPullRequest] = useState<boolean>(false);
+  const [selectedFilePath, setSelectedFilePath] = useState<string>("");
 
   const clearGenContent = () => {
     cache.delete("generatedContent");
@@ -449,7 +450,9 @@ const CodeEdit: React.FC = () => {
         <p className="text-lg">Username: {username || "None selected"}</p>
         <div>
           <div className="flex gap-4 items-center mb-2">
-            <p className="text-lg">Repository: {repository || "None selected"}</p>
+            <p className="text-lg">
+              Repository: {repository || "None selected"}
+            </p>
             <p>Processing Cache (makes the buttons below faster):</p>
             {cache.has("repoFileContents") ? (
               <p className="text-green-500">
@@ -467,7 +470,10 @@ const CodeEdit: React.FC = () => {
             )}
           </div>
           <div className="flex gap-4 items-center mb-2">
-            <p>Auto Submit Pull Request? (only works with README in the root directory)</p>
+            <p>
+              Auto Submit Pull Request? (only works with README in the root
+              directory)
+            </p>
             <input
               type="checkbox"
               checked={autoPullRequest}
@@ -521,20 +527,31 @@ const CodeEdit: React.FC = () => {
               Download File Contents
             </button>
             <button
-              onClick={() =>
+              onClick={() => {
+                var filepath = "README.md";
+                if (selectedFilePath != "") {
+                  filepath = selectedFilePath.replace(/[^a-zA-Z0-9-_]/g, "-");
+                }
                 submitPullRequest(
-                  "README.md",
-                  "Generated README from github search saas",
-                  "generated-readme",
-                  "Generated README",
-                  "This is a generated README from github search saas",
+                  filepath,
+                  "Generated output from github search saas",
+                  "generated-output",
+                  "Generated output",
+                  "This is the generated output from github search saas",
                   output
-                )
-              }
+                );
+              }}
               className="!bg-green-800 !p-2"
             >
               Submit Pull Request with the output below
             </button>
+            <input
+              type="text"
+              placeholder="Filepath for pull request (Default: README.md)"
+              className="w-1/4"
+              value={selectedFilePath}
+              onChange={(e) => setSelectedFilePath(e.target.value)}
+            />
           </div>
           <textarea
             className="w-full h-64 border-gray-500 border-2 rounded-lg p-2"
