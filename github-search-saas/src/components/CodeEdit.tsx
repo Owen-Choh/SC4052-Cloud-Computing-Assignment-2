@@ -543,7 +543,7 @@ const CodeEdit: React.FC = () => {
         </div>
         <div className="flex gap-2 text-lg items-center">
           Selected Item:
-          {selectedItems ? (
+          {selectedItems && selectedItems.path ? (
             <>
               <p>{selectedItems.path}</p>
               <button onClick={() => checkComments(selectedItems.path)} className="!text-base">
@@ -551,7 +551,7 @@ const CodeEdit: React.FC = () => {
               </button>
             </>
           ) : (
-            "None selected"
+            " None selected"
           )}
         </div>
         {loading && <p>Loading...</p>}
