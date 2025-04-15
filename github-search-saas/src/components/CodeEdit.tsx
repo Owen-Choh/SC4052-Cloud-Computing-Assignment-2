@@ -499,60 +499,76 @@ const CodeEdit: React.FC = () => {
           </div>
           <p>{modelTemperature}</p>
         </div>
-        <p className="text-lg">Username: {username || "None selected"}</p>
-        <div>
-          <div className="flex gap-4 items-center mb-2">
-            <p className="text-lg">
-              Repository: {repository || "None selected"}
-            </p>
-            <p>Processing Cache (makes the buttons below faster):</p>
+        <div className="flex gap-4 w-full">
+          <div>
+            <p className="text-lg">Username: {username || "None selected"}</p>
+            <div>
+              <div className="flex flex-col gap-4 mb-2">
+                <p className="text-lg">
+                  Repository: {repository || "None selected"}
+                </p>
+
+                <button onClick={generateDocumentation} className="w-fit">
+                  Generate Documentation
+                </button>
+
+                <div className="flex gap-4 items-center mb-2">
+                  <button onClick={generateREADME} className="w-fit">
+                    Generate README
+                  </button>
+                  <p>Auto Submit Pull Request?</p>
+                  <input
+                    type="checkbox"
+                    checked={autoPullRequest}
+                    onChange={(e) => setAutoPullRequest(e.target.checked)}
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-2 text-lg items-center">
+              Selected Item:
+              {selectedItems && selectedItems.path ? (
+                <>
+                  <p>{selectedItems.path}</p>
+                  <button
+                    onClick={() => checkComments(selectedItems.path)}
+                    className="!text-base"
+                  >
+                    Validate Comments in the file
+                  </button>
+                </>
+              ) : (
+                " None selected"
+              )}
+            </div>
+          </div>
+          <div className="ml-auto flex flex-col gap-2">
+            <h3 className="text-lg">
+              Processing Cache (makes generation faster):
+            </h3>
             {cache.has("repoFileContents") ? (
-              <p className="text-green-500">
-                Repository File Contents Cached {repoFileContentArray.length}
-              </p>
+              <div className="flex items-center gap-4">
+                <p className="text-green-500">
+                  Repository File Contents Cached {repoFileContentArray.length}
+                </p>
+                <button onClick={clearRepoContent}>
+                  Clear File Content cache
+                </button>
+              </div>
             ) : (
               <p className="text-red-500 font-bold">
                 Repository File Contents not Cached
               </p>
             )}
             {cache.has("generatedContent") ? (
-              <p className="text-green-500">AI Output Cached</p>
+              <div className="flex  items-center gap-4">
+                <p className="text-green-500">AI Output Cached</p>
+                <button onClick={clearGenContent}>Clear AI output cache</button>
+              </div>
             ) : (
               <p className="text-red-500 font-bold">AI Output not Cached</p>
             )}
           </div>
-          <div className="flex gap-4 items-center mb-2">
-            <p>
-              Auto Submit Pull Request? (only works with README in the root
-              directory)
-            </p>
-            <input
-              type="checkbox"
-              checked={autoPullRequest}
-              onChange={(e) => setAutoPullRequest(e.target.checked)}
-            />
-          </div>
-          <div className="flex gap-4">
-            <button onClick={generateDocumentation}>
-              Generate Documentation
-            </button>
-            <button onClick={generateREADME}>Generate README</button>
-            <button onClick={clearRepoContent}>Clear File Content cache</button>
-            <button onClick={clearGenContent}>Clear AI output cache</button>
-          </div>
-        </div>
-        <div className="flex gap-2 text-lg items-center">
-          Selected Item:
-          {selectedItems && selectedItems.path ? (
-            <>
-              <p>{selectedItems.path}</p>
-              <button onClick={() => checkComments(selectedItems.path)} className="!text-base">
-                Validate Comments in the file
-              </button>
-            </>
-          ) : (
-            " None selected"
-          )}
         </div>
         {loading && <p>Loading...</p>}
         {error && <p className="text-red-500">{error}</p>}
