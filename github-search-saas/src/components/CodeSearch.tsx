@@ -25,7 +25,7 @@ const CodeSearch = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [loadingDescriptions, setLoadingDescriptions] = useState({});
-  const [selectAll, setSelectAll] = useState(false);
+  const [selectAll, setSelectAll] = useState(selectedItems.length >= results.length);
 
   type SearchCodeResult = {
     total_count: number;
