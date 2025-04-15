@@ -446,11 +446,10 @@ const CodeEdit: React.FC = () => {
           </div>
           <p>{modelTemperature}</p>
         </div>
-        <h3 className="text-lg">Selected Details:</h3>
-        <p>Username: {username || "None selected"}</p>
+        <p className="text-lg">Username: {username || "None selected"}</p>
         <div>
           <div className="flex gap-4 items-center mb-2">
-            <p>Repository: {repository || "None selected"}</p>
+            <p className="text-lg">Repository: {repository || "None selected"}</p>
             <p>Processing Cache (makes the buttons below faster):</p>
             {cache.has("repoFileContents") ? (
               <p className="text-green-500">
@@ -468,7 +467,7 @@ const CodeEdit: React.FC = () => {
             )}
           </div>
           <div className="flex gap-4 items-center mb-2">
-            <p>Auto Submit Pull Request?</p>
+            <p>Auto Submit Pull Request? (only works with README in the root directory)</p>
             <input
               type="checkbox"
               checked={autoPullRequest}
