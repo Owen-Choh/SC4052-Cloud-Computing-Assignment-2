@@ -105,8 +105,8 @@ const GeneralInfo: React.FC = () => {
           </label>
           <p>
             This is used to list the repos that you own, search and retrieve
-            code in the repository. Optionally, also submit pull requests if you
-            use one of the features provided.
+            code in the repository. Optionally, also submit pull requests if
+            you use one of the features provided.
           </p>
         </div>
         <div className="flex flex-col gap-2 border-2 border-gray-700 rounded-lg p-4">
