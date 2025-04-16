@@ -79,7 +79,7 @@ const CodeSearch = () => {
         userFilter = `+user:${username}`;
       }
 
-      const nextPattern = /(?<=<)([\S]*)(?=>; rel="Next")/i;
+      const nextPattern = /(?<=<)([\S]*)(?=>; rel=\"Next\")/i;
       let pagesRemaining = true;
       let data: any[] = [];
       const queryString = `${query}${languageFilter}${userFilter}${nameWithRepo}`;
@@ -147,8 +147,7 @@ const CodeSearch = () => {
         geminiApiKey,
         `User searched for ${query} and wants a description of the code from the file ${
           item.name
-        } - ${item.repository.full_name}
-        Summarise what this code is doing in two to three sentences. ${atob(
+        } - ${item.repository.full_name}\n        Summarise what this code is doing in two to three sentences. ${atob(
           getCodeResponse.data.content
         )}`
       );

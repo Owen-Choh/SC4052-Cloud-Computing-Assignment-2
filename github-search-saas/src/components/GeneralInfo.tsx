@@ -1,3 +1,8 @@
+/**
+ * This React component provides a user interface for setting general information
+ * such as GitHub username, repository name, GitHub token, and Gemini API key.
+ * It also includes functionality to fetch repositories for a given GitHub username.
+ */
 import React, { useState } from "react";
 import { useGithubContext } from "../context/useGithubContext";
 import {
@@ -24,6 +29,9 @@ const GeneralInfo: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  /**
+   * Fetches the repositories for the given GitHub username.
+   */
   const fetchRepos = async () => {
     if (username) {
       setLoading(true);
@@ -163,6 +171,5 @@ const GeneralInfo: React.FC = () => {
       </div>
     </div>
   );
-};
-
+};\
 export default GeneralInfo;
