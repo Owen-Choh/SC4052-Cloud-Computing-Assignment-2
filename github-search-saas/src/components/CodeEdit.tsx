@@ -43,6 +43,7 @@ const CodeEdit: React.FC = () => {
   const [autoPullRequestComments, setAutoPullRequestComments] =
     useState<boolean>(true);
   const [selectedFilePath, setSelectedFilePath] = useState<string>("");
+  const [customPrompt, setCustomPrompt] = useState<string>("");
   const [minimizedCache, setMinimizedCache] = useState<boolean>(false);
 
   const toggleMinimizedCache = () => {
@@ -87,7 +88,9 @@ const CodeEdit: React.FC = () => {
       }
       console.log("promptArray reset: ", fileContentMap);
       repoFileContents = fileContents;
-      await setRepoFileContentMap((prev) => new Map([...prev, ...fileContentMap]));
+      await setRepoFileContentMap(
+        (prev) => new Map([...prev, ...fileContentMap])
+      );
       cache.set("repoFileContents", repoFileContents);
     }
 
@@ -145,7 +148,9 @@ const CodeEdit: React.FC = () => {
       }
       console.log("promptArray reset: ", fileContentMap);
       repoFileContents = fileContents;
-      await setRepoFileContentMap((prev) => new Map([...prev, ...fileContentMap]));
+      await setRepoFileContentMap(
+        (prev) => new Map([...prev, ...fileContentMap])
+      );
       cache.set("repoFileContents", repoFileContents);
     }
 
@@ -164,6 +169,70 @@ const CodeEdit: React.FC = () => {
         (await generateWithSystemInstructionAndConfig(
           geminiApiKey,
           systemInstruction,
+          finalPrompt,
+          {
+            temperature: modelTemperature,
+          }
+        )) || "Error generating content";
+
+      console.log("generatedContent: ", generatedContent);
+      cache.set("generatedContent", generatedContent);
+      setOutput(generatedContent);
+    }
+
+    setLoading(false);
+    setLoadingMessage("");
+  };
+
+  const sendCustomPrompt = async () => {
+    setLoading(true);
+    setLoadingMessage("Validating initial state...");
+    setError(null);
+    if (!validateInitialState()) {
+      setLoading(false);
+      setLoadingMessage("");
+      return;
+    }
+    if (customPrompt == "") {
+      setError("Please enter a custom prompt.");
+      setLoading(false);
+      setLoadingMessage("");
+      return;
+    }
+    setLoadingMessage("Checking cache...");
+    var { repoFileContents, finalPrompt, generatedContent } = checkCache(cache);
+    if (repoFileContents == "") {
+      setLoadingMessage("Fetching file contents, please remain patient...");
+      let { fileContents, fileContentMap, errmsg } = await fetchFileContents(
+        results,
+        token
+      );
+      if (errmsg) {
+        setError("Error fetching file content for: " + errmsg);
+        return;
+      }
+      console.log("promptArray reset: ", fileContentMap);
+      repoFileContents = fileContents;
+      await setRepoFileContentMap(
+        (prev) => new Map([...prev, ...fileContentMap])
+      );
+      cache.set("repoFileContents", repoFileContents);
+    }
+
+    console.log("repoFileContentMap after reset: ", repoFileContentMap);
+    if (finalPrompt == "") {
+      setLoadingMessage("Preparing final prompt...");
+      finalPrompt = `These are the contents of the files in the repository\n\n${repoFileContents}`;
+      cache.set("finalPrompt", finalPrompt);
+    }
+
+    if (generatedContent == "") {
+      setLoadingMessage("Generating a response...");
+
+      generatedContent =
+        (await generateWithSystemInstructionAndConfig(
+          geminiApiKey,
+          customPrompt,
           finalPrompt,
           {
             temperature: modelTemperature,
@@ -327,10 +396,14 @@ const CodeEdit: React.FC = () => {
               {cache.has("repoFileContents") ? (
                 <div className="flex items-center gap-4">
                   <p className="text-green-500 max-w-1/2">
-                    Repository File Contents Cached{" "}
-                    {repoFileContentMap.size} from {resultsFromRepo}
+                    Repository File Contents Cached {repoFileContentMap.size}{" "}
+                    from {resultsFromRepo}
                   </p>
-                  <button onClick={()=>clearRepoContent(cache, setRepoFileContentMap, setOutput)}>
+                  <button
+                    onClick={() =>
+                      clearRepoContent(cache, setRepoFileContentMap, setOutput)
+                    }
+                  >
                     Clear File Content cache
                   </button>
                 </div>
@@ -423,34 +496,51 @@ const CodeEdit: React.FC = () => {
             >
               Download Cached File Contents
             </button>
-            <button
-              onClick={() => {
-                var filepath = "README.md";
-                if (selectedFilePath != "") {
-                  filepath = selectedFilePath.replace(/[^a-zA-Z0-9-_/.]/g, "-");
-                }
-                submitPullRequest(
-                  username,
-                  repository,
-                  token,
-                  [{ filePath: filepath, fileContent: output }],
-                  `Generated ${filepath} from github search saas`,
-                  "generated-output",
-                  "Generated output",
-                  `This is the generated ${filepath} from github search saas`
-                );
-              }}
-              className="!bg-green-800 !p-2"
-            >
-              Submit Pull Request with the output below
-            </button>
-            <input
-              type="text"
-              placeholder="Filepath of pull request (Default: README.md)"
-              className="w-1/4"
-              value={selectedFilePath}
-              onChange={(e) => setSelectedFilePath(e.target.value)}
-            />
+            <div className="flex flex-col gap-2 items-center">
+              <button
+                onClick={() => {
+                  var filepath = "README.md";
+                  if (selectedFilePath != "") {
+                    filepath = selectedFilePath.replace(
+                      /[^a-zA-Z0-9-_/.]/g,
+                      "-"
+                    );
+                  }
+                  submitPullRequest(
+                    username,
+                    repository,
+                    token,
+                    [{ filePath: filepath, fileContent: output }],
+                    `Generated ${filepath} from github search saas`,
+                    "generated-output",
+                    "Generated output",
+                    `This is the generated ${filepath} from github search saas`
+                  );
+                }}
+                className="!bg-green-800 !p-2"
+              >
+                Submit Pull Request with the output below
+              </button>
+              <input
+                type="text"
+                placeholder="Filepath of pull request (Default: README.md)"
+                className="w-full"
+                value={selectedFilePath}
+                onChange={(e) => setSelectedFilePath(e.target.value)}
+              />
+            </div>
+            <div className="flex flex-col gap-2 items-center flex-grow">
+              <button onClick={sendCustomPrompt} className="!bg-blue-900 !p-2">
+                Send custom prompt with entire search result as context
+              </button>
+              <input
+                type="text"
+                placeholder="Custom prompt (e.g. Give me some descriptions to consider for this repository)"
+                className="w-full"
+                value={customPrompt}
+                onChange={(e) => setCustomPrompt(e.target.value)}
+              />
+            </div>
           </div>
           <textarea
             className="w-full h-64 border-gray-500 border-2 rounded-lg p-2"
