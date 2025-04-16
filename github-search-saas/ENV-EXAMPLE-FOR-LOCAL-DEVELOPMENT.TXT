@@ -1,0 +1,4 @@
+# For convience, you can use an env file to hold these keys when running the app locally
+# I do not recommend using a env if you deploy as these keys will be exposed to users
+VITE_GEMINI_API_KEY='YOUR GEMINI API KEY'
+VITE_GITHUB_TOKEN='YOUR GITHUB FINE GRAINED TOKEN'
