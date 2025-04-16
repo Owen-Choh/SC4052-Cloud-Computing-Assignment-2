@@ -24,7 +24,7 @@ const GeneralInfo: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Function to get the repositories for the given username using octokit
+  // Function to get the repositories for the every repository that the token has access to
   const fetchRepos = async () => {
     if (username) {
       setLoading(true);

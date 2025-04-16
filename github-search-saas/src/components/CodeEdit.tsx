@@ -365,6 +365,8 @@ const CodeEdit: React.FC = () => {
 
     if (repoFileContents == "") {
       setLoadingMessage("Fetching file contents...");
+      finalPrompt = "";
+      cache.delete("finalPrompt");
       let { fileContents, fileContentArray, errmsg } = await fetchFileContents(
         results
       );
@@ -415,7 +417,7 @@ const CodeEdit: React.FC = () => {
     for (const file of selectedFiles) {
       setLoadingMessage(`Processing ${file.path}...`);
       try {
-        const systemInstruction = `Help me add comments to the code ${file.path} to make it well documented and check the accuracy of existing comments. Format your response in JSON with two attributes 'fileContent' and 'explain'. If no changes are needed, Set 'fileContent'='none' AND 'explain' must start with 'No changes needed.'. Give me the full updated file only if comments in the file need changes. 'explain' will be appended to the body of a pull request to explain the changes. Your output will be parsed by the JSON.parse() javascript function and will not be seen by users.`;
+        const systemInstruction = `Add comments to the code ${file.path} to make it well documented. Check the accuracy of existing comments with referecnce to the rest of the code base such as the claims of the comment being different from what is implemented. Format your response in JSON with two attributes 'fileContent' and 'explain'.\nIf no changes are needed, set both 'fileContent'='none' AND 'explain' must start with 'No changes needed.'. Otherwise give me the full updated file if there are changes. 'explain' will be appended to the body of a pull request to explain the changes. Your output will be parsed by the JSON.parse() javascript function and will not be seen by users.`;
 
         const generatedContent =
           (await generateWithSystemInstructionAndConfig(
@@ -906,7 +908,7 @@ const CodeEdit: React.FC = () => {
                   Repository File Contents not Cached
                 </p>
               )}
-              {cache.has("generatedContent") ? (
+              {!loading && (cache.has("generatedContent") || cache.has("finalPrompt")) ? (
                 <div className="flex  items-center gap-4">
                   <p className="text-green-500">
                     AI Output Cached
