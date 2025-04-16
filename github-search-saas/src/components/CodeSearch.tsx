@@ -207,8 +207,11 @@ const CodeSearch = () => {
         <div className="flex flex-col gap-2 mt-2">
           <h2 className="text-xl">Search Results</h2>
           <p>
+            If there are missing items, try to search with less filters or try again later as it may take some time for the API to index the files.
+          </p>
+          <p>
             Use 'Ctrl'+'F' to search for specific files in the list below. Click
-            on the item to open in a new tab
+            on the item to open in a new tab.
           </p>
           <p>
             <span className="font-bold">All</span> Search Results will{" "}
