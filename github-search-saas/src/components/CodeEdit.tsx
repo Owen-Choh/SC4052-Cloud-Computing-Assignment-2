@@ -415,7 +415,7 @@ const CodeEdit: React.FC = () => {
     for (const file of selectedFiles) {
       setLoadingMessage(`Processing ${file.path}...`);
       try {
-        const systemInstruction = `Help me make sure that the code ${file.path} is well documented by adding comments and checking the accuracy of existing comments. Format your response in JSON with two attributes 'fileContent' and 'explain'. If no changes are needed, Set 'fileContent'='none' AND 'explain' must start with 'No changes needed.'. Give me the full updated file only if comments in the file need changes. 'explain' will be appended to the body of a pull request to explain the changes. Your output will be parsed by the JSON.parse() javascript function and will not be seen by users.`;
+        const systemInstruction = `Help me add comments to the code ${file.path} to make it well documented and check the accuracy of existing comments. Format your response in JSON with two attributes 'fileContent' and 'explain'. If no changes are needed, Set 'fileContent'='none' AND 'explain' must start with 'No changes needed.'. Give me the full updated file only if comments in the file need changes. 'explain' will be appended to the body of a pull request to explain the changes. Your output will be parsed by the JSON.parse() javascript function and will not be seen by users.`;
 
         const generatedContent =
           (await generateWithSystemInstructionAndConfig(
