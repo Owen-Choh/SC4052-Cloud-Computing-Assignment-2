@@ -73,8 +73,13 @@ export async function generateWithTools(
   systemInstruction: string,
   historyArr: string[],
   prompt: string,
-  config: GenerateContentConfig
+  config: GenerateContentConfig,
+  toolDeclaration: any,
 ) {
+  if (!toolDeclaration) {
+    throw new Error("Tool declaration is required.");
+  }
+
   var mappedHistory;
   if (historyArr.length === 0) {
     mappedHistory = undefined;
@@ -96,7 +101,7 @@ export async function generateWithTools(
       },
       tools: [
         {
-          functionDeclarations: [submitPullRequestFunctionDeclaration],
+          functionDeclarations: [toolDeclaration],
         },
       ],
     },
@@ -109,7 +114,7 @@ export async function generateWithTools(
   return result;
 }
 
-export async function generateWithSystemInstructionConfigAndTools(
+export async function generateWithPullRequestDeclaration(
   geminiApiKey: string,
   systemInstruction: string,
   prompt: string,
@@ -179,6 +184,33 @@ export const submitPullRequestFunctionDeclaration = {
     ],
   },
 };
+
+export const parseFileObjectFunctionDeclaration = {
+  name: "parse_file_object",
+  description: "Parse the file JSON object to be used in the pull request.",
+  parameters: {
+    type: Type.OBJECT,
+    properties: {
+      fileContent: {
+        type: Type.STRING,
+        description: "The content of the file.",
+      },
+      explain: {
+        type: Type.STRING,
+        description: "Explaination of the changes.",
+      },
+    },
+    required: [
+      "fileContent",
+      "explain",
+    ],
+  },
+};
+
+export interface FileObjWithExplaination {
+  fileContent: string;
+  explain: string;
+}
 
 export interface PullRequestArgs {
   filePath: string;

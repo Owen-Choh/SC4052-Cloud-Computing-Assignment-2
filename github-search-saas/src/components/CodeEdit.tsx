@@ -5,9 +5,10 @@ import {
   defaultGenerationConfig,
   generateContentWithConfig,
   generateWithSystemInstructionAndConfig,
-  generateWithSystemInstructionConfigAndTools,
+  generateWithPullRequestDeclaration,
   generateWithTools,
   PullRequestArgs,
+  parseFileObjectFunctionDeclaration,
 } from "../geminiAPI/geminiAPI";
 import { Slider } from "@mui/material";
 
@@ -187,15 +188,14 @@ const CodeEdit: React.FC = () => {
           "repoFileContentArray before gen ai: ",
           repoFileContentArray
         );
-        const genWithToolsResponse =
-          await generateWithSystemInstructionConfigAndTools(
-            geminiApiKey,
-            systemInstruction,
-            finalPrompt,
-            {
-              temperature: modelTemperature,
-            }
-          );
+        const genWithToolsResponse = await generateWithPullRequestDeclaration(
+          geminiApiKey,
+          systemInstruction,
+          finalPrompt,
+          {
+            temperature: modelTemperature,
+          }
+        );
 
         console.log("genWithToolsResponse: ", genWithToolsResponse);
         console.log("genWithToolsResponse text: ", genWithToolsResponse.text);
@@ -412,22 +412,37 @@ const CodeEdit: React.FC = () => {
       filePath: string;
       fileContent: string;
       explain: string;
-    }[] = []; 
+    }[] = [];
 
     for (const file of selectedFiles) {
       setLoadingMessage(`Processing ${file.path}...`);
       try {
-        const systemInstruction = `Add comments to the code ${file.path} to make it well documented. Check the accuracy of existing comments with referecnce to the rest of the code base such as the claims of the comment being different from what is implemented. Format your response in JSON with two attributes 'fileContent' and 'explain'.\nIf no changes are needed, set both 'fileContent'='none' AND 'explain' must start with 'No changes needed.'. Otherwise give me the full updated file if there are changes. 'explain' will be appended to the body of a pull request to explain the changes. Your output will be parsed by the JSON.parse() javascript function and will not be seen by users.`;
+        // const systemInstruction = `Add comments to the code ${file.path} to make it well documented. Check the accuracy of existing comments with referecnce to the rest of the code base such as the claims of the comment being different from what is implemented. Format your response in JSON with two attributes 'fileContent' and 'explain'.\nIf no changes are needed, set both 'fileContent'='none' AND 'explain' must start with 'No changes needed.'. Otherwise give me the full updated file if there are changes. 'explain' will be appended to the body of a pull request to explain the changes. Your output will be parsed by the JSON.parse() javascript function and will not be seen by users.`;
+        const systemInstruction = `You are an API agent. Your response will be consumed directly by code and parsed as a JSON object. Just return a raw JSON object. Help me make sure that the code ${file.path} is well documented.`;
 
+        // const generatedContent =
+        //   (await generateWithSystemInstructionAndConfig(
+        //     geminiApiKey,
+        //     systemInstruction,
+        //     finalPrompt,
+        //     {
+        //       temperature: modelTemperature,
+        //     }
+        //   )) || "Error generating content";
+
+        const generatedResponse = await generateWithTools(
+          geminiApiKey,
+          systemInstruction,
+          [],
+          finalPrompt,
+          {
+            temperature: modelTemperature,
+          },
+          parseFileObjectFunctionDeclaration
+        );
+        
         const generatedContent =
-          (await generateWithSystemInstructionAndConfig(
-            geminiApiKey,
-            systemInstruction,
-            finalPrompt,
-            {
-              temperature: modelTemperature,
-            }
-          )) || "Error generating content";
+          generatedResponse.text || "Error generating content";
 
         if (
           generatedContent !== "none" &&
@@ -908,7 +923,8 @@ const CodeEdit: React.FC = () => {
                   Repository File Contents not Cached
                 </p>
               )}
-              {!loading && (cache.has("generatedContent") || cache.has("finalPrompt")) ? (
+              {!loading &&
+              (cache.has("generatedContent") || cache.has("finalPrompt")) ? (
                 <div className="flex  items-center gap-4">
                   <p className="text-green-500">
                     AI Output Cached

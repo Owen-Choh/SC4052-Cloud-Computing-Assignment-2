@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { githubSearchCodeApi, octokit } from "../api/apiconfigs";
+import { useState } from "react";
+import { octokit } from "../api/apiconfigs";
 import { useGithubContext } from "../context/useGithubContext";
 import { generateContent } from "../geminiAPI/geminiAPI";
 import Markdown from "react-markdown";
