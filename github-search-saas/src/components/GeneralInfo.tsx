@@ -7,6 +7,10 @@ import {
   setOctokit,
 } from "../api/apiconfigs";
 
+/**
+ * GeneralInfo component for managing GitHub and Gemini API keys, username, and repository.
+ * Allows users to input their GitHub username and token, Gemini API key, and select a repository.
+ */
 const GeneralInfo: React.FC = () => {
   const {
     username,
@@ -24,7 +28,9 @@ const GeneralInfo: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Function to get the repositories for the every repository that the token has access to
+  /**
+   * Fetches the repositories for the every repository that the token has access to
+   */
   const fetchRepos = async () => {
     if (username) {
       setLoading(true);
