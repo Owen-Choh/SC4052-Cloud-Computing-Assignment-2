@@ -57,7 +57,7 @@ const CodeSearch = () => {
     // reset previous state
     setResultsFromRepo("");
     setResults([]);
-    setSelectedItems([]); 
+    setSelectedItems([]);
     // better to keep the descriptions when a new search is made since ai api calls are expensive
     // and can use the descriptions from the previous search if sha is same
     // setDescriptions({});
@@ -203,6 +203,7 @@ const CodeSearch = () => {
       {results.length > 0 && (
         <div className="flex flex-col gap-2 mt-2">
           <h2 className="text-xl">Search Results</h2>
+          <p>Use 'Ctrl'+'F' to search for specific files in the list below</p>
           <p>
             All Search Results will <span className="font-bold">always</span> be
             used as context for the AI features in the app
@@ -246,7 +247,7 @@ const CodeSearch = () => {
                       rel="noopener noreferrer"
                       className="!text-white hover:!underline"
                     >
-                      {item.name} - {item.repository.full_name}
+                      {item.path} - {item.repository.full_name}
                     </a>
                   </label>
                   <button

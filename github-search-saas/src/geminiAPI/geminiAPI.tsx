@@ -74,7 +74,7 @@ export async function generateWithTools(
   historyArr: string[],
   prompt: string,
   config: GenerateContentConfig,
-  toolDeclaration: any,
+  toolDeclaration: any
 ) {
   if (!toolDeclaration) {
     throw new Error("Tool declaration is required.");
@@ -89,7 +89,7 @@ export async function generateWithTools(
       parts: [{ text: p }],
     }));
   }
-  console.log("mappedHistory", mappedHistory);
+
   const chat = genAI(geminiApiKey).chats.create({
     model: defaultModel,
     history: mappedHistory,
@@ -193,17 +193,14 @@ export const parseFileObjectFunctionDeclaration = {
     properties: {
       fileContent: {
         type: Type.STRING,
-        description: "The content of the file.",
+        description: "The full content of the file after the changes.",
       },
       explain: {
         type: Type.STRING,
-        description: "Explaination of the changes.",
+        description: "Explanation of the changes.",
       },
     },
-    required: [
-      "fileContent",
-      "explain",
-    ],
+    required: ["fileContent", "explain"],
   },
 };
 

@@ -23,8 +23,8 @@ interface GithubContextType {
   setDescriptions: (descriptions: Record<string, string>) => void;
   cache: Map<string, string>;
   setCache: (cache: Map<string, string>) => void;
-  repoFileContentArray: string[];
-  setRepoFileContentArray: (array: string[]) => void;
+  repoFileContentMap: Map<string, string>;
+  setRepoFileContentMap: (map: Map<string, string>) => void;
   geminiApiKey: string;
   setGeminiApiKey: (key: string) => void;
 }
@@ -57,9 +57,7 @@ export const GithubProvider: React.FC<{ children: ReactNode }> = ({
   const [resultsFromRepo, setResultsFromRepo] = useState("");
   const [descriptions, setDescriptions] = useState<Record<string, string>>({});
   const [cache, setCache] = useState<Map<string, string>>(new Map());
-  const [repoFileContentArray, setRepoFileContentArray] = useState<string[]>(
-    []
-  );
+  const [repoFileContentMap, setRepoFileContentMap] = useState<Map<string, string>>(new Map());
   const [geminiApiKey, setGeminiApiKey] = useState("");
 
   const setToken = (token: string) => {
@@ -92,8 +90,8 @@ export const GithubProvider: React.FC<{ children: ReactNode }> = ({
         setDescriptions,
         cache,
         setCache,
-        repoFileContentArray,
-        setRepoFileContentArray,
+        repoFileContentMap,
+        setRepoFileContentMap,
         geminiApiKey,
         setGeminiApiKey,
       }}
