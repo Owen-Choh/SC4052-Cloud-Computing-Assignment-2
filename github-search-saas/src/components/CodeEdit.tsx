@@ -417,18 +417,7 @@ const CodeEdit: React.FC = () => {
     for (const file of selectedFiles) {
       setLoadingMessage(`Processing ${file.path}...`);
       try {
-        // const systemInstruction = `Add comments to the code ${file.path} to make it well documented. Check the accuracy of existing comments with referecnce to the rest of the code base such as the claims of the comment being different from what is implemented. Format your response in JSON with two attributes 'fileContent' and 'explain'.\nIf no changes are needed, set both 'fileContent'='none' AND 'explain' must start with 'No changes needed.'. Otherwise give me the full updated file if there are changes. 'explain' will be appended to the body of a pull request to explain the changes. Your output will be parsed by the JSON.parse() javascript function and will not be seen by users.`;
         const systemInstruction = `You are an API agent. Your response will be consumed directly by code and parsed as a JSON object. Just return a raw JSON object. Help me make sure that the code ${file.path} is well documented.`;
-
-        // const generatedContent =
-        //   (await generateWithSystemInstructionAndConfig(
-        //     geminiApiKey,
-        //     systemInstruction,
-        //     finalPrompt,
-        //     {
-        //       temperature: modelTemperature,
-        //     }
-        //   )) || "Error generating content";
 
         const generatedResponse = await generateWithTools(
           geminiApiKey,
@@ -440,7 +429,7 @@ const CodeEdit: React.FC = () => {
           },
           parseFileObjectFunctionDeclaration
         );
-        
+
         const generatedContent =
           generatedResponse.text || "Error generating content";
 

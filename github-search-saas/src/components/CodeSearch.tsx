@@ -44,7 +44,7 @@ const CodeSearch = () => {
     }
 
     // Some endpoints respond with 204 No Content instead of empty array
-    //   when there is no data. In that case, return an empty array.
+    // when there is no data. In that case, return an empty array.
     if (!data) {
       return [];
     }
@@ -54,10 +54,11 @@ const CodeSearch = () => {
   }
 
   const handleSearch = async () => {
+    // reset previous state
     setResultsFromRepo("");
     setResults([]);
-    setSelectedItems([]); // Initialize as an empty array for multiple selections
-    // better to keep the descriptions when a new search is made since api calls are expensive
+    setSelectedItems([]); 
+    // better to keep the descriptions when a new search is made since ai api calls are expensive
     // and can use the descriptions from the previous search if sha is same
     // setDescriptions({});
     setLoading(true);
