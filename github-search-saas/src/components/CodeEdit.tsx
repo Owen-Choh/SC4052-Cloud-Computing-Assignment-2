@@ -33,7 +33,10 @@ const CodeEdit: React.FC = () => {
     cache.get("generatedContent") || ""
   );
   const [modelTemperature, setModelTemperature] = useState<number>(0);
-  const [autoPullRequest, setAutoPullRequest] = useState<boolean>(false);
+  const [autoPullRequestReadme, setAutoPullRequestReadme] =
+    useState<boolean>(true);
+  const [autoPullRequestComments, setAutoPullRequestComments] =
+    useState<boolean>(true);
   const [selectedFilePath, setSelectedFilePath] = useState<string>("");
   const [minimizedCache, setMinimizedCache] = useState<boolean>(false);
   const toggleMinimizedCache = () => {
@@ -175,7 +178,7 @@ const CodeEdit: React.FC = () => {
 
     if (generatedContent == "") {
       setLoadingMessage("Generating README...");
-      if (autoPullRequest) {
+      if (autoPullRequestReadme) {
         console.log("Auto pull request enabled.");
         const systemInstruction = `You are an API agent. Your response will be consumed directly by code and parsed as a JSON object. Do not format your JSON output in markdown fence blocks. Do not include any explanations. Do not use code fences like \`\`\`json. Just return a raw JSON object.\nSubmit a pull request for a suggested README file for my code repository ${repository}. You do not need to include the code directly in the README, you may chose to include the file path if required.\nWrite the README in a way that is easy to understand for a beginner.\nInclude a short description of what the repository contains, an overview of the code, architecture (if applicable) and how to set up and use it.\nAlso include brief notes that the reader should look out for when using the repository such as not commiting their env file.`;
 
@@ -445,18 +448,24 @@ const CodeEdit: React.FC = () => {
     }
 
     if (outputs.length > 0) {
-      const pullRequestResult = submitPullRequest(
-        outputs,
-        "Generated comments",
-        "generated-comments",
-        "Generated comments",
-        "These are the generated comments from github search saas"
-      );
+      if (autoPullRequestComments) {
+        const pullRequestResult = submitPullRequest(
+          outputs,
+          "Generated comments",
+          "generated-comments",
+          "Generated comments",
+          "These are the generated comments from github search saas"
+        );
 
-      const outputArray: string = JSON.stringify(outputs, null, 2);
-      const finalOutput: string = `Pull request result: ${pullRequestResult}\n\nGenerated comments:\n${outputArray}`;
-      cache.set("generatedContent", finalOutput);
-      setOutput(finalOutput);
+        const outputArray: string = JSON.stringify(outputs, null, 2);
+        const finalOutput: string = `Pull request result: ${pullRequestResult}\n\nGenerated comments:\n${outputArray}`;
+        cache.set("generatedContent", finalOutput);
+        setOutput(finalOutput);
+      } else {
+        const outputArray: string = JSON.stringify(outputs, null, 2);
+        cache.set("generatedContent", outputArray);
+        setOutput(outputArray);
+      }
     } else {
       setOutput("No output generated.");
     }
@@ -799,19 +808,28 @@ const CodeEdit: React.FC = () => {
                   <p>Auto Submit Pull Request?</p>
                   <input
                     type="checkbox"
-                    checked={autoPullRequest}
-                    onChange={(e) => setAutoPullRequest(e.target.checked)}
+                    checked={autoPullRequestReadme}
+                    onChange={(e) => setAutoPullRequestReadme(e.target.checked)}
                   />
                 </div>
-
-                <button
-                  onClick={() =>
-                    generateCommentsAndSendPullRequest(selectedItems)
-                  }
-                  className="w-fit !bg-green-900"
-                >
-                  Generate Comments for all selected files and submit PR
-                </button>
+                <div className="flex gap-4 items-center">
+                  <button
+                    onClick={() =>
+                      generateCommentsAndSendPullRequest(selectedItems)
+                    }
+                    className="w-fit !bg-green-900"
+                  >
+                    Generate Comments for all selected files
+                  </button>
+                  <p>Auto Submit Pull Request?</p>
+                  <input
+                    type="checkbox"
+                    checked={autoPullRequestComments}
+                    onChange={(e) =>
+                      setAutoPullRequestComments(e.target.checked)
+                    }
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -879,7 +897,7 @@ const CodeEdit: React.FC = () => {
                     onClick={() => wellDocumented(item.path)}
                     className="!text-base !bg-green-900"
                   >
-                    "Well Documented"
+                    "Well Documented" Code
                   </button>
                 </li>
               ))}
