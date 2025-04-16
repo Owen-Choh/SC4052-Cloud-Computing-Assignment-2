@@ -82,7 +82,7 @@ const GeneralInfo: React.FC = () => {
           </label>
           <p>
             This is used to generate code descriptions and summaries. You can
-            get a free API key from google gemini.
+            get a free API key from Google Gemini.
           </p>
         </div>
         <div className="flex flex-col gap-2 border-2 border-gray-700 rounded-lg p-4">
@@ -107,7 +107,12 @@ const GeneralInfo: React.FC = () => {
           <p>
             This is used to list the repos that you own, search and retrieve
             code in the repository. Optionally, also submit pull requests if you
-            use one of the features provided.
+            use one of the features provided. To use all features provided by
+            the app,{" "}
+            <span className="font-bold">
+              Read and Write access to code and pull requests
+            </span>{" "}
+            for the repository are minimally required.
           </p>
         </div>
         <div className="flex flex-col gap-2 border-2 border-gray-700 rounded-lg p-4">
@@ -137,7 +142,7 @@ const GeneralInfo: React.FC = () => {
           </label>
           <p>
             Select a repository from the list of repositories fetched using your
-            GitHub username.
+            GitHub username and token. This will be the workspace for the app.
           </p>
           {loading ? (
             <span>Loading...</span>

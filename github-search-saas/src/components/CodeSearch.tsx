@@ -180,7 +180,8 @@ const CodeSearch = () => {
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Enter code snippet..."
+          className="w-1/4"
+          placeholder="Enter keyword to search..."
         />
         <button onClick={handleSearch} disabled={loading}>
           {loading ? "Searching..." : "Search"}
@@ -189,11 +190,13 @@ const CodeSearch = () => {
           type="text"
           value={fileTypes}
           onChange={(e) => setFileTypes(e.target.value)}
+          className="w-1/4"
           placeholder="Filter by comma seperated file types..."
         />
         {results.length > 0 && (
           <h2>
-            {results.length} Results from {resultsFromRepo}
+            <span className="text-lg font-bold">{results.length}</span> Results
+            from {resultsFromRepo}
           </h2>
         )}
       </div>
@@ -203,14 +206,18 @@ const CodeSearch = () => {
       {results.length > 0 && (
         <div className="flex flex-col gap-2 mt-2">
           <h2 className="text-xl">Search Results</h2>
-          <p>Use 'Ctrl'+'F' to search for specific files in the list below</p>
           <p>
-            All Search Results will <span className="font-bold">always</span> be
-            used as context for the AI features in the app
+            Use 'Ctrl'+'F' to search for specific files in the list below. Click
+            on the item to open in a new tab
+          </p>
+          <p>
+            <span className="font-bold">All</span> Search Results will{" "}
+            <span className="font-bold">always</span> be used as context for the
+            AI features in the app
           </p>
           <p>
             <span className="font-bold">Only specific features </span> will take
-            into account any <span className="font-bold">selected</span> files
+            into account the <span className="font-bold">selected</span> files
           </p>
           <button
             onClick={handleSelectAll}
@@ -253,9 +260,9 @@ const CodeSearch = () => {
                   <button
                     onClick={() => describeCode(item)}
                     disabled={loadingDescriptions[item.sha]}
-                    className="relative"
+                    className="!bg-blue-900 !p-1"
                   >
-                    {loadingDescriptions[item.sha] ? "Loading..." : "Describe"}
+                    {loadingDescriptions[item.sha] ? "Loading..." : "Generate description"}
                   </button>
                 </div>
                 {descriptions[item.sha] && (

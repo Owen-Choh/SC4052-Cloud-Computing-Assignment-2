@@ -45,9 +45,14 @@ const CodeEdit: React.FC = () => {
   const [selectedFilePath, setSelectedFilePath] = useState<string>("");
   const [customPrompt, setCustomPrompt] = useState<string>("");
   const [minimizedCache, setMinimizedCache] = useState<boolean>(false);
+  const [minimizedSelectedItems, setMinimizedSelectedItems] =
+    useState<boolean>(false);
 
   const toggleMinimizedCache = () => {
     setMinimizedCache(!minimizedCache);
+  };
+  const toggleMinimizedSelectedItems = () => {
+    setMinimizedSelectedItems(!minimizedSelectedItems);
   };
 
   const validateInitialState = (): boolean => {
@@ -431,40 +436,68 @@ const CodeEdit: React.FC = () => {
           </div>
         </div>
         <div className="flex gap-2 text-lg">
-          Selected Items:
-          {selectedItems && selectedItems.length > 0 ? (
-            <ul className="flex flex-col gap-2">
-              {selectedItems.map((item) => (
-                <li key={item.sha} className="flex gap-2">
-                  <p>{item.path}</p>
-                  <button
-                    onClick={() => checkComments(item.path)}
-                    className="!text-base !bg-green-700"
+          <div>
+            Selected Items:
+            {selectedItems && selectedItems.length > 0 ? (
+              <div className="flex w-full justify-center items-center gap-2">
+                <p className="text-green-500">{selectedItems.length}</p>
+                <button
+                  onClick={toggleMinimizedSelectedItems}
+                  className="!p-0 !px-1 !bg-blue-900"
+                >
+                  {minimizedSelectedItems ? "Show" : "Hide"}
+                </button>
+              </div>
+            ) : (
+              <p className="text-red-500">None</p>
+            )}
+          </div>
+          {!minimizedSelectedItems &&
+            selectedItems &&
+            selectedItems.length > 0 && (
+              <ul className="flex flex-col gap-2">
+                {selectedItems.map((item) => (
+                  <li
+                    key={item.sha}
+                    className="flex gap-2 items-center border-gray-700 border-2 p-2 rounded-lg"
                   >
-                    Validate Comments
-                  </button>
-                  <button
-                    onClick={() => wellDocumented(item.path)}
-                    className="!text-base !bg-green-900"
-                  >
-                    "Well Documented" Code
-                  </button>
-                  <button
-                    onClick={() => {
-                      setSelectedItems((prev) =>
-                        prev.filter((prevItem) => prevItem !== item)
-                      );
-                    }}
-                    className="!text-base !bg-red-900"
-                  >
-                    Deselect
-                  </button>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            " None selected"
-          )}
+                    <label htmlFor={`select-${item.sha}`} className="flex-grow">
+                      <a
+                        href={item.html_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="!text-white hover:!underline"
+                      >
+                        {item.path}
+                      </a>
+                    </label>
+                    {/* <p className="flex-grow">{item.path}</p> */}
+                    <button
+                      onClick={() => checkComments(item.path)}
+                      className="!text-base !bg-green-700 !p-2"
+                    >
+                      Validate Comments
+                    </button>
+                    <button
+                      onClick={() => wellDocumented(item.path)}
+                      className="!text-base !bg-green-900 !p-2"
+                    >
+                      "Well Documented" Code
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSelectedItems((prev) =>
+                          prev.filter((prevItem) => prevItem !== item)
+                        );
+                      }}
+                      className="!text-base !bg-red-900 !p-2"
+                    >
+                      Deselect
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
         </div>
         {loading && (
           <p className="text-green-500">{loadingMessage || "Loading..."}</p>
