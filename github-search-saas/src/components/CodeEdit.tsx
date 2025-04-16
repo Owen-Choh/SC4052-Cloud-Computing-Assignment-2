@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useGithubContext } from "../context/useGithubContext";
-import { githubGetCodeApi } from "../api/apiconfigs";
+import { GITHUB_TOKEN, githubGetCodeApi } from "../api/apiconfigs";
 import {
   defaultGenerationConfig,
   generateContentWithConfig,
@@ -17,6 +17,7 @@ const CodeEdit: React.FC = () => {
     repository,
     token,
     selectedItems,
+    setSelectedItems,
     results,
     resultsFromRepo,
     cache,
@@ -118,7 +119,7 @@ const CodeEdit: React.FC = () => {
           `/${item.repository.full_name}/contents/${item.path}`,
           {
             headers: {
-              Authorization: `Bearer ${token}`,
+              Authorization: `Bearer ${token || GITHUB_TOKEN}`,
             },
           }
         );
@@ -387,6 +388,7 @@ const CodeEdit: React.FC = () => {
     if (generatedContent != "") {
       setLoading(false);
       setLoadingMessage("");
+      return;
     }
 
     setLoadingMessage("Validating input files...");
@@ -402,12 +404,18 @@ const CodeEdit: React.FC = () => {
     }
 
     setLoadingMessage("Processing selected files...");
-    const outputs: { filePath: string; fileContent: string }[] = []; // Array to store outputs for each file
+    // Array to store outputs for each file
+    // only contains filePath and fileContent
+    const outputs: {
+      filePath: string;
+      fileContent: string;
+      explain: string;
+    }[] = []; 
 
     for (const file of selectedFiles) {
       setLoadingMessage(`Processing ${file.path}...`);
       try {
-        const systemInstruction = `Help me make sure that the code ${file.path} is well documented. Give me the full updated file only if comments in the file need changes. Return "none" if no changes are needed. Your output will be parsed by code and will not be seen by users. Do not wrap your output in markdown tags.`;
+        const systemInstruction = `Help me make sure that the code ${file.path} is well documented by adding comments and checking the accuracy of existing comments. Format your response in JSON with two attributes 'fileContent' and 'explain'. If no changes are needed, Set 'fileContent'='none' AND 'explain' must start with 'No changes needed.'. Give me the full updated file only if comments in the file need changes. 'explain' will be appended to the body of a pull request to explain the changes. Your output will be parsed by the JSON.parse() javascript function and will not be seen by users.`;
 
         const generatedContent =
           (await generateWithSystemInstructionAndConfig(
@@ -424,16 +432,40 @@ const CodeEdit: React.FC = () => {
           generatedContent !== "" &&
           generatedContent !== "Error generating content"
         ) {
+          console.log("generatedContent: ", generatedContent);
+          // Try to parse the generated content as JSON
           const cleanedContent = stripCodeFences(generatedContent);
-          if (cleanedContent !== "") {
+          let parsedContent: { fileContent: string; explain: string };
+          try {
+            parsedContent = JSON.parse(cleanedContent);
+          } catch (error) {
+            try {
+              console.log(
+                "Error parsing generated content, trying again after removing extra new lines..."
+              );
+              const removedExtraNewlines = cleanedContent.replace(/\n/g, "");
+              parsedContent = JSON.parse(removedExtraNewlines);
+            } catch (error) {
+              console.error("Error parsing generated content:", error);
+              continue; // Skip this file if parsing fails
+            }
+          }
+
+          if (
+            parsedContent.fileContent &&
+            parsedContent.fileContent !== "none" &&
+            !parsedContent.explain.startsWith("No changes needed.")
+          ) {
             outputs.push({
               filePath: file.path,
-              fileContent: cleanedContent,
+              fileContent: parsedContent.fileContent,
+              explain: parsedContent.explain,
             });
           } else {
             console.log(
               `No changes needed after removing code fences for ${file.path}`
             );
+            console.log("parsedContent: ", parsedContent);
           }
         } else {
           console.log(`No generated content for ${file.path}`);
@@ -443,18 +475,29 @@ const CodeEdit: React.FC = () => {
         outputs.push({
           filePath: file.path,
           fileContent: "Error generating content",
+          explain: (error as string) || "Error",
         });
       }
     }
 
     if (outputs.length > 0) {
       if (autoPullRequestComments) {
-        const pullRequestResult = submitPullRequest(
+        console.log("Auto pull request enabled.");
+        setLoadingMessage("Submitting pull request...");
+
+        const explanations = outputs.map((output) => {
+          output.filePath + "\n" + output.explain;
+        });
+        explanations.join("\n\n");
+
+        const pullRequestBody = `These are the generated comments from github search saas. The following files were updated:\n\n${explanations}`;
+
+        const pullRequestResult = await submitPullRequest(
           outputs,
           "Generated comments",
           "generated-comments",
           "Generated comments",
-          "These are the generated comments from github search saas"
+          pullRequestBody
         );
 
         const outputArray: string = JSON.stringify(outputs, null, 2);
@@ -648,7 +691,7 @@ const CodeEdit: React.FC = () => {
         `/${username}/${repository}`,
         {
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${token || GITHUB_TOKEN}`,
           },
         }
       );
@@ -660,7 +703,7 @@ const CodeEdit: React.FC = () => {
         `/${username}/${repository}/branches/${defaultBranch}`,
         {
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${token || GITHUB_TOKEN}`,
           },
         }
       );
@@ -689,7 +732,7 @@ const CodeEdit: React.FC = () => {
           },
           {
             headers: {
-              Authorization: `Bearer ${token}`,
+              Authorization: `Bearer ${token || GITHUB_TOKEN}`,
             },
           }
         );
@@ -705,7 +748,7 @@ const CodeEdit: React.FC = () => {
         },
         {
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${token || GITHUB_TOKEN}`,
           },
         }
       );
@@ -722,7 +765,7 @@ const CodeEdit: React.FC = () => {
         },
         {
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${token || GITHUB_TOKEN}`,
           },
         }
       );
@@ -739,7 +782,7 @@ const CodeEdit: React.FC = () => {
         },
         {
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${token || GITHUB_TOKEN}`,
           },
         }
       );
@@ -819,7 +862,7 @@ const CodeEdit: React.FC = () => {
                     }
                     className="w-fit !bg-green-900"
                   >
-                    Generate Comments for all selected files
+                    Generate and Check Comments for all selected files
                   </button>
                   <p>Auto Submit Pull Request?</p>
                   <input
@@ -898,6 +941,16 @@ const CodeEdit: React.FC = () => {
                     className="!text-base !bg-green-900"
                   >
                     "Well Documented" Code
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSelectedItems((prev) =>
+                        prev.filter((prevItem) => prevItem !== item)
+                      );
+                    }}
+                    className="!text-base !bg-red-900"
+                  >
+                    Deselect
                   </button>
                 </li>
               ))}

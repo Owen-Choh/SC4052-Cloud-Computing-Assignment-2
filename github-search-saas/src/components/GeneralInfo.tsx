@@ -34,7 +34,7 @@ const GeneralInfo: React.FC = () => {
           githubSearchRepoApi.defaults.baseURL + `?q=user:${username}`,
           {
             headers: {
-              Authorization: `Bearer ${token}`,
+              Authorization: `Bearer ${token || GITHUB_TOKEN}`,
             },
           }
         );

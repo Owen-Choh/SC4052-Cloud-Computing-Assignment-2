@@ -6,7 +6,6 @@ import { GithubProvider } from "./context/useGithubContext";
 
 function App() {
   const [tab, setTab] = useState("GeneralInfo");
-  console.log("tab", tab);
   return (
     <div className="App flex min-h-screen w-screen">
       {/* side bar */}

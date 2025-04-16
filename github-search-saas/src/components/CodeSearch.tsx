@@ -28,7 +28,7 @@ const CodeSearch = () => {
   const [error, setError] = useState(null);
   const [loadingDescriptions, setLoadingDescriptions] = useState({});
   const [selectAll, setSelectAll] = useState(
-    selectedItems.length >= results.length
+    results && results.length && selectedItems.length >= results.length
   );
 
   type SearchCodeResult = {
