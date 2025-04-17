@@ -322,7 +322,7 @@ export const generateCommentsAndSendPullRequest = async (
   for (const file of selectedItems) {
     setLoadingMessage(`Processing ${file.path}...`);
     try {
-      const systemInstruction = `You are an API agent. Your response will be consumed directly by code and parsed as a JSON object. Just return a raw JSON object. Help me make sure that the code ${file.path} is well documented.\n\n${repoFileContentMap.get(file.path)}`;
+      const systemInstruction = `You are an API agent. Your response will be consumed directly by code and parsed as a JSON object with attributes fileContent and explain. Help me amend ${file.path} comments to be accurate. Also help me make sure that the code ${file.path} is well documented. Give me the entire updated file in the json output.\n\n${repoFileContentMap.get(file.path)}`;
 
       const generatedResponse = await generateWithTools(
         geminiApiKey,
