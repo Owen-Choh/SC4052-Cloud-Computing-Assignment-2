@@ -1,10 +1,16 @@
 import { githubGetCodeApi, GITHUB_TOKEN } from "../api/apiconfigs";
 
-export const fetchFileContents = async (results: any[], token: string): Promise<{
-  fileContents: string;
-  fileContentMap: Map<string, string>;
-  errmsg: string;
-}> => {
+/**
+ * Fetches the content of multiple files from GitHub.
+ *
+ * @param {any[]} results - An array of search result items, each containing repository and path information.
+ * @param {string} token - The GitHub token to use for authentication. If not provided, `GITHUB_TOKEN` from apiconfigs will be used.
+ * @returns {Promise<{ fileContents: string; fileContentMap: Map<string, string>; errmsg: string; }>} An object containing:
+ *   - `fileContents`: A concatenated string of all file contents, separated by file paths.
+ *   - `fileContentMap`: A Map where the key is the file path and the value is the file content.
+ *   - `errmsg`: A string containing any error messages, with file paths that failed to fetch separated by semicolons.
+ */
+export const fetchFileContents = async (results: any[], token: string): Promise<{ fileContents: string; fileContentMap: Map<string, string>; errmsg: string; }> => {
   let fileContents = "";
   let fileContentMap = new Map<string, string>();
   let errmsg = "";
@@ -31,7 +37,21 @@ export const fetchFileContents = async (results: any[], token: string): Promise<
   return { fileContents, fileContentMap, errmsg };
 };
 
-// submits pull request, will throw an error if api call fails
+/**
+ * Submits a pull request to a GitHub repository with the given files.
+ *
+ * @param {string} username - The username of the repository owner.
+ * @param {string} repository - The name of the repository.
+ * @param {string} token - The GitHub token to use for authentication. If not provided, `GITHUB_TOKEN` from apiconfigs will be used.
+ * @param {{ filePath: string; fileContent: string; }[]} files - An array of file objects, each containing the file path and content.
+ * @param {string} commitMessage - The message for the commit.
+ * @param {string} branchName - The name of the branch to create for the pull request.
+ * @param {string} pullRequestTitle - The title of the pull request.
+ * @param {string} pullRequestBody - The body of the pull request.
+ * @returns {Promise<{ result: string; errmsg: string; }>} An object containing:
+ *   - `result`: A message indicating the success or failure of the pull request submission.
+ *   - `errmsg`: A string containing any error messages.
+ */
 export const submitPullRequest = async (
   username: string,
   repository: string,
