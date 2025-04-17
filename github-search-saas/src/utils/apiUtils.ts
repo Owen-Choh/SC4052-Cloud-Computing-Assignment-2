@@ -31,6 +31,7 @@ export const fetchFileContents = async (results: any[], token: string): Promise<
   return { fileContents, fileContentMap, errmsg };
 };
 
+// submits pull request, will throw an error if api call fails
 export const submitPullRequest = async (
   username: string,
   repository: string,

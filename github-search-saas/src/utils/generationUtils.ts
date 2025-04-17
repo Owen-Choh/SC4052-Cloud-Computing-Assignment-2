@@ -412,7 +412,7 @@ export const generateCommentsAndSendPullRequest = async (
       } else {
         setError(pullRequestResult.errmsg);
       }
-      
+
       setOutput(finalOutput);
       cache.set("generatedContent", finalOutput);
     } else {
