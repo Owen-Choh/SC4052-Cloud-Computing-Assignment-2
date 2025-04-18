@@ -203,84 +203,83 @@ const CodeSearch = () => {
 
       {error && <p style={{ color: "red" }}>Error: {error}</p>}
 
-      {results.length > 0 && (
-        <div className="flex flex-col gap-2 mt-2">
-          <h2 className="text-xl">Search Results</h2>
-          <p>
-            If there are missing items, try to search with less filters or try
-            again later as it may take some time for the API to index the files.
-          </p>
-          <p>
-            Use 'Ctrl'+'F' to search for specific files in the list below. Click
-            on the item to open in a new tab.
-          </p>
-          <p>
-            <span className="font-bold">All</span> Search Results will{" "}
-            <span className="font-bold">always</span> be used as context for the
-            AI features in the app
-          </p>
-          <p>
-            <span className="font-bold">Only specific features </span> will take
-            into account the <span className="font-bold">selected</span> files
-          </p>
-          <button
-            onClick={handleSelectAll}
-            className="w-fit !p-2 !bg-green-700"
-          >
-            {selectAll ? "Deselect All" : "Select All"}
-          </button>
-          <ul className="border-gray-500 border-2 rounded-lg p-2">
-            {results.map((item) => (
-              <li
-                key={item.sha}
-                className="flex flex-col gap-2 p-2 border-gray-200 border-2 rounded-lg"
-              >
-                <div className="flex gap-4 items-center">
-                  <input
-                    type="checkbox"
-                    id={`select-${item.sha}`}
-                    className="mr-2"
-                    checked={selectedItems.some(
-                      (selected) => selected.sha === item.sha
-                    )}
-                    onChange={() => {
-                      setSelectedItems((prev) =>
-                        prev.some((selected) => selected.sha === item.sha)
-                          ? prev.filter((selected) => selected.sha !== item.sha)
-                          : [...prev, item]
-                      );
-                    }}
-                  />
-                  <label htmlFor={`select-${item.sha}`} className="flex-grow">
-                    <a
-                      href={item.html_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="!text-white hover:!underline"
+      <div className="flex flex-col gap-2 mt-2">
+        <h2 className="text-xl">Search Results</h2>
+        <p>
+          If there are missing items, try to search with less filters or try
+          again later as it may take some time for the API to index the files.
+        </p>
+        <p>
+          Use 'Ctrl'+'F' to search for specific files in the list below. Click
+          on the item to open in a new tab.
+        </p>
+        <p>
+          <span className="font-bold">All</span> Search Results will{" "}
+          <span className="font-bold">always</span> be used as context for the
+          AI features in the app
+        </p>
+        <p>
+          <span className="font-bold">Only specific features </span> will take
+          into account the <span className="font-bold">selected</span> files
+        </p>
+        {results.length > 0 && <button onClick={handleSelectAll} className="w-fit !p-2 !bg-green-700" disabled={loading}>
+          {selectAll ? "Deselect All" : "Select All"}
+        </button>}
+        <ul className="border-gray-500 border-2 rounded-lg p-2">
+          {results.length > 0
+            ? results.map((item) => (
+                <li
+                  key={item.sha}
+                  className="flex flex-col gap-2 p-2 border-gray-200 border-2 rounded-lg"
+                >
+                  <div className="flex gap-4 items-center">
+                    <input
+                      type="checkbox"
+                      id={`select-${item.sha}`}
+                      className="mr-2"
+                      checked={selectedItems.some(
+                        (selected) => selected.sha === item.sha
+                      )}
+                      onChange={() => {
+                        setSelectedItems((prev) =>
+                          prev.some((selected) => selected.sha === item.sha)
+                            ? prev.filter(
+                                (selected) => selected.sha !== item.sha
+                              )
+                            : [...prev, item]
+                        );
+                      }}
+                    />
+                    <label htmlFor={`select-${item.sha}`} className="flex-grow">
+                      <a
+                        href={item.html_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="!text-white hover:!underline"
+                      >
+                        {item.path} - {item.repository.full_name}
+                      </a>
+                    </label>
+                    <button
+                      onClick={() => describeCode(item)}
+                      disabled={loadingDescriptions[item.sha]}
+                      className="!bg-blue-900 !p-1"
                     >
-                      {item.path} - {item.repository.full_name}
-                    </a>
-                  </label>
-                  <button
-                    onClick={() => describeCode(item)}
-                    disabled={loadingDescriptions[item.sha]}
-                    className="!bg-blue-900 !p-1"
-                  >
-                    {loadingDescriptions[item.sha]
-                      ? "Loading..."
-                      : "Generate description"}
-                  </button>
-                </div>
-                {descriptions[item.sha] && (
-                  <div className="p-2">
-                    <Markdown>{descriptions[item.sha]}</Markdown>
+                      {loadingDescriptions[item.sha]
+                        ? "Loading..."
+                        : "Generate description"}
+                    </button>
                   </div>
-                )}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+                  {descriptions[item.sha] && (
+                    <div className="p-2">
+                      <Markdown>{descriptions[item.sha]}</Markdown>
+                    </div>
+                  )}
+                </li>
+              ))
+            : "No results :("}
+        </ul>
+      </div>
     </div>
   );
 };
