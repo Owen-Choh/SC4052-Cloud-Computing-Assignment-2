@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useGithubContext } from "../context/useGithubContext";
 import { fetchFileContents, submitPullRequest } from "../utils/apiUtils";
-import { stripCodeFences, downloadOutput } from "../utils/utils";
+import { downloadOutput } from "../utils/utils";
 import {
   checkCache,
   clearGenContent,
@@ -25,7 +25,6 @@ const CodeEdit: React.FC = () => {
     results,
     resultsFromRepo,
     cache,
-    setCache,
     repoFileContentMap,
     setRepoFileContentMap,
     geminiApiKey,
@@ -93,7 +92,7 @@ const CodeEdit: React.FC = () => {
       }
       console.log("promptArray reset: ", fileContentMap);
       repoFileContents = fileContents;
-      await setRepoFileContentMap(
+      setRepoFileContentMap(
         (prev) => new Map([...prev, ...fileContentMap])
       );
       cache.set("repoFileContents", repoFileContents);

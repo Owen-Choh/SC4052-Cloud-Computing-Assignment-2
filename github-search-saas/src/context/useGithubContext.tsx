@@ -8,9 +8,9 @@ interface GithubContextType {
   token: string;
   setToken: (token: string) => void;
   selectedItems: any[]; // Change to an array to support multiple selections
-  setSelectedItems: (items: any[]) => void;
+  setSelectedItems: React.Dispatch<React.SetStateAction<any[]>>;
   repos: string[];
-  setRepos: (repos: string[]) => void;
+  setRepos: React.Dispatch<React.SetStateAction<string[]>>;
   query: string;
   setQuery: (query: string) => void;
   fileTypes: string;
@@ -20,11 +20,11 @@ interface GithubContextType {
   resultsFromRepo: string;
   setResultsFromRepo: (repoName: string) => void;
   descriptions: Record<string, string>;
-  setDescriptions: (descriptions: Record<string, string>) => void;
+  setDescriptions: React.Dispatch<React.SetStateAction<Record<string, string>>>;
   cache: Map<string, string>;
   setCache: (cache: Map<string, string>) => void;
   repoFileContentMap: Map<string, string>;
-  setRepoFileContentMap: (map: Map<string, string>) => void;
+  setRepoFileContentMap: React.Dispatch<React.SetStateAction<Map<string, string>>>;
   geminiApiKey: string;
   setGeminiApiKey: (key: string) => void;
 }

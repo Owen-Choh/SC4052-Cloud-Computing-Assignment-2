@@ -25,8 +25,8 @@ const CodeSearch = () => {
   } = useGithubContext();
 
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [loadingDescriptions, setLoadingDescriptions] = useState({});
+  const [error, setError] = useState<string | null>(null);
+  const [loadingDescriptions, setLoadingDescriptions] = useState<Record<string, boolean>>({});
   const [selectAll, setSelectAll] = useState(
     results && results.length && selectedItems.length >= results.length
   );
@@ -96,7 +96,13 @@ const CodeSearch = () => {
 
       let linkHeader = response.headers.link;
       while (pagesRemaining) {
-        let url = linkHeader.match(nextPattern)[0] || null;
+        var url;
+        if (linkHeader) {
+          const match = linkHeader.match(nextPattern);
+          url = match ? match[0] : null;
+        } else {
+          url = null;
+        }
 
         if (!url) {
           console.log(
@@ -120,13 +126,23 @@ const CodeSearch = () => {
       setResultsFromRepo(repository);
       setResults(data);
     } catch (err) {
-      setError(err.message);
+      console.error("Error fetching search results:", err);
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError(err as string);
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  const describeCode = async (item) => {
+  const describeCode = async (item: {
+    sha: any;
+    repository: { owner: { login: any }; name: any; full_name: any };
+    path: any;
+    name: any;
+  }) => {
     setLoadingDescriptions((prev) => ({ ...prev, [item.sha]: true }));
     try {
       const getCodeResponse = await octokit.request(
@@ -137,16 +153,23 @@ const CodeSearch = () => {
           path: item.path,
         }
       );
+      if (
+        !("content" in getCodeResponse.data && getCodeResponse.data.content)
+      ) {
+        console.log("No content in response");
+        throw new Error("No content in response");
+      }
+
       console.log(atob(getCodeResponse.data.content));
       if (getCodeResponse.data.content === "") {
         console.log("code api response is empty");
-        return;
+        throw new Error("code api response is empty");
       }
 
       var desc = query ? query : "all code in the repository";
       const description = await generateContent(
         geminiApiKey,
-        `User searched for ${query} and wants a description of the code from the file ${
+        `User searched for ${desc} and wants a description of the code from the file ${
           item.name
         } - ${item.repository.full_name}
         Summarise what this code is doing in two to three sentences. ${atob(
@@ -222,9 +245,15 @@ const CodeSearch = () => {
           <span className="font-bold">Only specific features </span> will take
           into account the <span className="font-bold">selected</span> files
         </p>
-        {results.length > 0 && <button onClick={handleSelectAll} className="w-fit !p-2 !bg-green-700" disabled={loading}>
-          {selectAll ? "Deselect All" : "Select All"}
-        </button>}
+        {results.length > 0 && (
+          <button
+            onClick={handleSelectAll}
+            className="w-fit !p-2 !bg-green-700"
+            disabled={loading}
+          >
+            {selectAll ? "Deselect All" : "Select All"}
+          </button>
+        )}
         <ul className="border-gray-500 border-2 rounded-lg p-2">
           {results.length > 0
             ? results.map((item) => (
