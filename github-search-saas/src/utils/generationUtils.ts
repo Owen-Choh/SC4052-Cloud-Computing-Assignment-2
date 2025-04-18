@@ -34,7 +34,7 @@ export const generateREADME = async (
 
   if (repoFileContents === "") {
     setLoadingMessage("Fetching file contents, please remain patient...");
-    const { fileContents, fileContentMap, errmsg } = await fetchFileContents(results, geminiApiKey);
+    const { fileContents, fileContentMap, errmsg } = await fetchFileContents(results, token);
     if (errmsg) {
       setError("Error fetching file content for: " + errmsg);
       setLoading(false);
