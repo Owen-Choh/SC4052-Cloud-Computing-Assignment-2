@@ -1,0 +1,19 @@
+{
+  "candidates": [
+    {
+      "content": {},
+      "finishReason": "MALFORMED_FUNCTION_CALL"
+    }
+  ],
+  "usageMetadata": {
+    "promptTokenCount": 78699,
+    "totalTokenCount": 78699,
+    "promptTokensDetails": [
+      {
+        "modality": "TEXT",
+        "tokenCount": 78699
+      }
+    ]
+  },
+  "modelVersion": "gemini-2.0-flash"
+}

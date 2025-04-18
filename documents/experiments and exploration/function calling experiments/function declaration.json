@@ -1,0 +1,43 @@
+[
+  {
+    "name": "submit_pull_request",
+    "description": "Submit a pull request to the repository.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "filePath": {
+          "type": "string",
+          "description": "path of the file with file name, e.g. 'README.md'"
+        },
+        "commitMessage": {
+          "type": "string",
+          "description": "commit message of the change"
+        },
+        "branchName": {
+          "type": "string",
+          "description": "branch name created for the pull request"
+        },
+        "pullRequestTitle": {
+          "type": "string",
+          "description": "The title of the pull request."
+        },
+        "pullRequestBody": {
+          "type": "string",
+          "description": "The body of the pull request."
+        },
+        "fileContent": {
+          "type": "string",
+          "description": "The content of the file."
+        }
+      },
+      "required": [
+        "filePath",
+        "commitMessage",
+        "branchName",
+        "pullRequestTitle",
+        "pullRequestBody",
+        "fileContent"
+      ]
+    }
+  }
+]

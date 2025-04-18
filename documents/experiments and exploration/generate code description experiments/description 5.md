@@ -1,0 +1,1 @@
+The `LoginPage.tsx` file implements a login and registration page using React, allowing users to either log in to an existing account or create a new one. It uses custom hooks for authentication, manages form input, and validates user credentials before submitting them to the backend. Upon successful login or registration, the user is redirected to the dashboard.\n

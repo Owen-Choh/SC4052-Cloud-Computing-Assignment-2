@@ -1,0 +1,113 @@
+package userservice
+
+import (
+	"errors"
+	"net/http"
+	"time"
+
+	"yourapp/types"
+	"yourapp/utils"
+	"yourapp/middleware/auth"
+	"context"
+)
+
+type Handler struct {
+	store types.UserStoreInterface
+}
+
+func NewHandler(store types.UserStoreInterface) *Handler {
+	return &Handler{store: store}
+}
+
+func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
+	mux.HandleFunc("/", h.HandleRoot)
+	mux.HandleFunc("/login", h.HandleLogin)
+	mux.HandleFunc("/register", h.HandleRegister)
+	mux.HandleFunc("/logout", h.HandleLogout)
+	mux.Handle("/auth/check", auth.WithJWTAuth(http.HandlerFunc(h.HandleAuthCheck), h.store))
+}
+
+func (h *Handler) HandleRoot(w http.ResponseWriter, r *http.Request) {
+	utils.WriteJSON(w, http.StatusOK, map[string]string{"message": "Hello from user"})
+}
+
+func (h *Handler) HandleLogin(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	var creds types.Credentials
+	if err := utils.ParseJSON(r.Body, &creds); err != nil {
+		utils.WriteError(w, http.StatusBadRequest, err)
+		return
+	}
+	user, err := h.store.Authenticate(creds.Username, creds.Password)
+	if err != nil {
+		utils.WriteError(w, http.StatusUnauthorized, errors.New("invalid username or password"))
+		return
+	}
+	token, err := auth.CreateJWT(user.ID, user.Username)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+	http.SetCookie(w, &http.Cookie{
+		Name:     "auth_token",
+		Value:    token,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteStrictMode,
+		Expires:  time.Now().Add(24 * time.Hour),
+	})
+	utils.WriteJSON(w, http.StatusOK, map[string]string{"message": "logged in"})
+}
+
+func (h *Handler) HandleRegister(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	var creds types.Credentials
+	if err := utils.ParseJSON(r.Body, &creds); err != nil {
+		utils.WriteError(w, http.StatusBadRequest, err)
+		return
+	}
+	if len(creds.Username) < 3 || len(creds.Password) < 8 {
+		utils.WriteError(w, http.StatusBadRequest, errors.New("username or password too short"))
+		return
+	}
+	err := h.store.CreateUser(creds.Username, creds.Password)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+	utils.WriteJSON(w, http.StatusCreated, map[string]string{"message": "user registered successfully"})
+}
+
+func (h *Handler) HandleLogout(w http.ResponseWriter, r *http.Request) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     "auth_token",
+		Value:    "",
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteStrictMode,
+		Expires:  time.Unix(0, 0),
+	})
+	utils.WriteJSON(w, http.StatusOK, map[string]string{"message": "logged out"})
+}
+
+func (h *Handler) HandleAuthCheck(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	userID, ok1 := ctx.Value(auth.KeyUserID).(string)
+	username, ok2 := ctx.Value(auth.KeyUsername).(string)
+	if !ok1 || !ok2 {
+		utils.WriteError(w, http.StatusUnauthorized, errors.New("invalid auth context"))
+		return
+	}
+	utils.WriteJSON(w, http.StatusOK, map[string]string{
+		"userID":   userID,
+		"username": username,
+	})
+}

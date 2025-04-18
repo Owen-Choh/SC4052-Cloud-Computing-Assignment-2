@@ -1,0 +1,1 @@
+The comments in `github-search-saas/src/App.tsx` are accurate.
