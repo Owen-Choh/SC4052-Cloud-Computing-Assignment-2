@@ -62,6 +62,13 @@ const GeneralInfo: React.FC = () => {
     <div className="p-4 border-gray-500 border-2 rounded-lg flex-grow">
       <div className="flex gap-4 items-center w-full">
         <h2 className="text-2xl">General Information</h2>
+        <a
+          className="text-2xl"
+          href="https://github.com/Owen-Choh/SC4052-Cloud-Computing-Assignment-2"
+          target="_blank"
+        >
+          (App source code can be found here)
+        </a>
       </div>
       <div className="flex flex-col gap-4 mt-4">
         <div className="flex flex-col gap-2 border-2 border-gray-700 rounded-lg p-4">
