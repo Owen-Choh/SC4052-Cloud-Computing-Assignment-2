@@ -1,6 +1,6 @@
 # SC4052-Cloud-Computing-Assignment-2
 
-This repository contains a React-based SaaS application for searching and editing code on GitHub, enhanced with AI-powered documentation and comment generation.
+This repository contains a React-based SaaS application developed as part of NTU SC4052 Cloud Computing for searching and editing code on GitHub, enhanced with AI-powered documentation and comment generation. As a demonstration, this README was generated using the application, with light editing and customization to suit this project.
 
 ## Description
 
@@ -52,17 +52,19 @@ The application follows a component-based architecture using React. It leverages
     npm install
     ```
 
-3.  **Set up environment variables:**
+3.  **Set up environment variables (for convience when running locally):**
 
-    - Create a `.env` file in the root directory of the `github-search-saas` folder.
+    - Create a `.env` file in the `github-search-saas` folder.
     - Add your GitHub token and Gemini API key to the `.env` file:
 
       ```
       VITE_GITHUB_TOKEN='YOUR_GITHUB_TOKEN'
-VITE_GEMINI_API_KEY='YOUR_GEMINI_API_KEY'
+      VITE_GEMINI_API_KEY='YOUR_GEMINI_API_KEY'
       ```
 
     - Alternatively, you can set these environment variables directly in your system.
+> [!CAUTION]
+> Including environment variables when deploying the app will result in leaking them.
 
 4.  **Run the application:**
 
@@ -90,11 +92,13 @@ VITE_GEMINI_API_KEY='YOUR_GEMINI_API_KEY'
     - Generate documentation for the selected code using the "Generate Documentation" button.
     - Check and improve code comments with AI assistance using the "Generate and Check Comments for all selected files" button.
     - Submit pull requests with generated documentation or improved comments.
+> [!TIP]
+> Try getting the entire repo in Code Search for best results!
 
 ## Important Notes
 
 -   **Do not commit your `.env` file** containing your GitHub token and Gemini API key to the repository. This file should be kept private.
 -   Ensure that your GitHub token has the necessary permissions (read and write access to code and pull requests) for the application to function correctly.
--   The Gemini API key is required for generating documentation and comments. You can obtain a free API key from Google Gemini.
--   The application uses caching to improve performance. You can clear the cache in the CodeEdit tab to regenerate content.
--   If there are missing items in the search results, try to search with less filters or try again later as it may take some time for the API to index the files.
+-   The Gemini API key is required for generating documentation and comments. You can obtain a free API key from Google Gemini as of time of writing.
+-   The application uses caching to improve performance. You can clear the respective cache in the CodeEdit tab to regenerate content.
+-   If there are missing items in the search results, try to search with less filters or try again later as it may take some time for the API to index the files. You may also manually filter until you get the expected results...
