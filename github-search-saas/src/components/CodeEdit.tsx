@@ -425,7 +425,10 @@ const CodeEdit: React.FC = () => {
                     <br />
                     Clear this to regenerate output
                   </p>
-                  <button onClick={() => clearGenContent(cache, setOutput)}>
+                  <button
+                    onClick={() => clearGenContent(cache, setOutput)}
+                    className="!bg-red-900"
+                  >
                     Clear AI output cache
                   </button>
                 </div>
@@ -551,6 +554,7 @@ const CodeEdit: React.FC = () => {
                   );
                 }}
                 className="!bg-green-800 !p-2"
+                disabled={loading || output == ""}
               >
                 Submit Pull Request with the output below
               </button>
@@ -563,7 +567,11 @@ const CodeEdit: React.FC = () => {
               />
             </div>
             <div className="flex flex-col gap-2 items-center flex-grow">
-              <button onClick={sendCustomPrompt} className="!bg-blue-900 !p-2">
+              <button
+                onClick={sendCustomPrompt}
+                className="!bg-blue-900 !p-2"
+                disabled={loading || output != "" || customPrompt == ""}
+              >
                 Send custom prompt with entire search result as context
               </button>
               <input
