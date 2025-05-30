@@ -23,7 +23,7 @@ concurrency:
 
 jobs:
   # build react app and deploy job
-  deploy:
+  build-and-deploy:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -31,8 +31,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Change to webapp directory
-        run: cd github-search-saas
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
@@ -40,8 +38,10 @@ jobs:
           cache: 'npm'
           cache-dependency-path: github-search-saas/package-lock.json
       - name: Install dependencies
+        working-directory: ./github-search-saas
         run: npm ci
       - name: Build
+        working-directory: ./github-search-saas
         run: npm run build
       - name: Setup Pages
         uses: actions/configure-pages@v5
