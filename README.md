@@ -2,7 +2,7 @@
 
 This repository contains a React-based SaaS application developed as part of NTU SC4052 Cloud Computing for searching and editing code on GitHub, enhanced with AI-powered documentation and comment generation. As a demonstration, this README was generated using the application, with light editing and customization to suit this project.
 
-➡️ [Try the app here](https://sc4052-cloud-computing-assignment-2.glitch.me/)
+➡️ [Try the app here](https://sc4052-cloud-computing-assignment-2.glitch.me/) [or on github pages here](https://owen-choh.github.io/SC4052-Cloud-Computing-Assignment-2/)
 
 ## Description
 
