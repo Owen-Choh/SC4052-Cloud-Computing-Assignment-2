@@ -4,6 +4,7 @@ import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: '/SC4052-Cloud-Computing-Assignment-2/',
   plugins: [
     react(),
     tailwindcss(),
